@@ -1,14 +1,23 @@
-﻿
-Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2015
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2008
+
+Project("{42455B05-C79C-E177-AD0C-76C896EE46C4}") = "Sound Visualization", "Assembly-CSharp.csproj", "{C94C53C1-5D3D-D622-DD09-9E4437A9C908}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C94C53C1-5D3D-D622-DD09-9E4437A9C908}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C94C53C1-5D3D-D622-DD09-9E4437A9C908}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C94C53C1-5D3D-D622-DD09-9E4437A9C908}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C94C53C1-5D3D-D622-DD09-9E4437A9C908}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(MonoDevelopProperties) = preSolution
+		StartupItem = Assembly-CSharp.csproj
 	EndGlobalSection
 EndGlobal
