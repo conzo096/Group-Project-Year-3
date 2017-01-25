@@ -64,7 +64,11 @@ public class MCBlob : MonoBehaviour
     /*Blobs are a staggered array of floats, where first index is blob, and second is 0=x, 1=y 2=z 3=power
       Multidim might be slightly faster, but staggered made the code a little cleaner IMO*/
     public float[][] blobs;
-
+    // Should the metaballs move?
+    public bool move;
+    // Number of metaballs to spawn
+    [Range(1, 14)]
+    public int instances;
     /*Cutoff intensity, where the surface of mesh will be created*/
     public float isoLevel = .5f;
 
@@ -508,6 +512,17 @@ public class MCBlob : MonoBehaviour
     //Unity and Sample specific
     void Update()
     {
+        blobs = new float[instances][];
+        for (int i = 0; i < blobs.Length; i++)
+        {
+            Random.seed = i;
+            blobs[i] = new float[] { Random.Range(-0.4f, 0.8f), Random.Range(-0.4f, 0.4f), 0f, .05f };
+            if (move)
+            {
+                blobs[i][1] = blobs[i][1] + Mathf.Sin(Time.time) * Random.Range(-0.4f, 0.4f);
+                blobs[i][2] = blobs[i][2] + Mathf.Cos(Time.time) * Random.Range(-0.4f, 0.4f);
+            }
+        }
 
         //Update FPS and counters every second
         //if (lt + 1 < Time.time)
@@ -516,18 +531,20 @@ public class MCBlob : MonoBehaviour
         //    GUIText guit = (GUIText)GameObject.Find("guit").guiText;
         //    guit.text = "T:" + triP + " V:" + vertP + " C:" + cubec + " FPS:" + (int)(1f / Time.deltaTime);
         //}
-        blobs[0][0] = .12f + .12f * (float)Mathf.Sin((float)Time.time * .50f);
-        blobs[0][2] = .06f + .23f * (float)Mathf.Cos((float)Time.time * .2f);
-        blobs[1][0] = .12f + .12f * (float)Mathf.Sin((float)Time.time * .2f);
-        blobs[1][2] = -.23f + .10f * (float)Mathf.Cos((float)Time.time * 1f);
-        blobs[2][1] = -.03f + .24f * (float)Mathf.Sin((float)Time.time * .35f);
-        blobs[3][1] = .126f + .10f * (float)Mathf.Cos((float)Time.time * .1f);
-        blobs[4][0] = .206f + .1f * (float)Mathf.Cos((float)Time.time * .5f);
-        blobs[4][1] = .056f + .2f * (float)Mathf.Sin((float)Time.time * .3f);
-        blobs[4][2] = .25f + .08f * (float)Mathf.Cos((float)Time.time * .2f);
-
-        transform.Rotate(Time.deltaTime * 10f, 0, Time.deltaTime * .6f);
-
+        //if (move)
+        //{
+        //    blobs[0][0] = .12f + .12f * (float)Mathf.Sin((float)Time.time * .50f);
+        //    blobs[0][2] = .06f + .23f * (float)Mathf.Cos((float)Time.time * .2f);
+        //    blobs[1][0] = .12f + .12f * (float)Mathf.Sin((float)Time.time * .2f);
+        //    blobs[1][2] = -.23f + .10f * (float)Mathf.Cos((float)Time.time * 1f);
+        //    blobs[2][1] = -.03f + .24f * (float)Mathf.Sin((float)Time.time * .35f);
+        //    blobs[3][1] = .126f + .10f * (float)Mathf.Cos((float)Time.time * .1f);
+        //    blobs[4][0] = .206f + .1f * (float)Mathf.Cos((float)Time.time * .5f);
+        //    blobs[4][1] = .056f + .2f * (float)Mathf.Sin((float)Time.time * .3f);
+        //    blobs[4][2] = .25f + .08f * (float)Mathf.Cos((float)Time.time * .2f);
+        //
+        //    transform.Rotate(Time.deltaTime * 10f, 0, Time.deltaTime * .6f);
+        //}
         doFrame();
 
 
@@ -536,13 +553,16 @@ public class MCBlob : MonoBehaviour
     //Unity and Sample Specific
     void Start()
     {
+        // Set to not move on start
+        move = false;
+        instances = 1;
         lt = 0f;
-        blobs = new float[5][];
-        blobs[0] = new float[] { .16f, .26f, .16f, .13f };
-        blobs[1] = new float[] { .13f, -.134f, .35f, .12f };
-        blobs[2] = new float[] { -.18f, .125f, -.25f, .16f };
-        blobs[3] = new float[] { -.13f, .23f, .255f, .13f };
-        blobs[4] = new float[] { -.18f, .125f, .35f, .12f };
+        blobs = new float[instances][];
+        //blobs[0] = new float[] { .16f, .26f, .16f, .13f };
+        //blobs[1] = new float[] { .13f, -.134f, .35f, .12f };
+        //blobs[2] = new float[] { -.18f, .125f, -.25f, .16f };
+        //blobs[3] = new float[] { -.13f, .23f, .255f, .13f };
+        //blobs[4] = new float[] { -.18f, .125f, .35f, .12f };
 
         isoLevel = 1.95f;
 
