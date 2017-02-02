@@ -36,10 +36,10 @@ public class RingController : MonoBehaviour
         //transforms = GetComponentsInChildren<Transform>();
         //ringInstance = GetComponentInChildren<GameObject>();
         //getcomponents
-        ringLifeTime = 1f;
-        ringRadius = 10f;
+        //ringLifeTime = 1f;
+        //ringRadius = 10f;
         //ringInstances = 1;
-        CreateRingSetup();
+        //CreateRingSetup();
 
         for (int i = 0; i < ringInstances; i++)
         {
@@ -53,6 +53,9 @@ public class RingController : MonoBehaviour
 	// Update is called once per frame
 	void Update ()
     {
+        // Keep getting a reference to the particle systems of the children (TODO: fix, probably costly)
+        ps = GetComponentsInChildren<ParticleSystem>();
+
         // Loop through all particle systems and adjust ring radius
         foreach (ParticleSystem psCurrent in ps)
         {
@@ -62,14 +65,45 @@ public class RingController : MonoBehaviour
             psCurrent.startLifetime = ringLifeTime;
         }
 
+        // Add missing rings
+        if (transform.childCount < ringInstances)
+        {
+            // Number of rings to be created
+            int instancesToCreate = ringInstances - transform.childCount;
+            // Create rings as children
+            for (int i = 0; i < instancesToCreate; i++)
+            {
+                
+                GameObject childObject = Instantiate(ring) as GameObject;
+                childObject.transform.parent = this.transform;
+                int displacement = 0;//5 * transform.childCount;
+                childObject.transform.Translate(new Vector3(0f, displacement, 0f));
+            }
+        }
 
-        //for (int i = 0; i < psShape.Length; i++)
-        //{
-        //    Debug.Log(i);
-        //    psShape[i].radius = ringRadius;
-        //}
+        // Destroy extra rings
+        if (transform.childCount > ringInstances)
+        {
+            // Number of rings to be deleted
+            int instancesToDelete = transform.childCount - ringInstances;
+            
+            foreach (Transform child in transform)
+            {
+                if (instancesToDelete == 0)
+                {
+                    continue;
+                }
+                else
+                {
+                    Destroy(child.gameObject);
+                    instancesToDelete--;
+                }
 
-	}
+            }
+        }
+
+
+    }
 
     // Sets the particle system to emit as a ring, if not already set-up
     void CreateRingSetup()
