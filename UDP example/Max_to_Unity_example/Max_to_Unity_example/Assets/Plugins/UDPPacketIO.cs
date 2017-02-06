@@ -48,7 +48,6 @@ using UnityEngine;
         {
             Sender = new UdpClient();
             //Debug.Log("opening udpclient listener on port " + localPort);
-
             IPEndPoint listenerIp = new IPEndPoint(IPAddress.Any, localPort);
             Receiver = new UdpClient(listenerIp);
             socketsOpen = true;

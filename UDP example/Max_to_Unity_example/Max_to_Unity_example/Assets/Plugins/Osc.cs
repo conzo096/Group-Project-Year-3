@@ -11,7 +11,7 @@ using System;
   public class OscMessage
   {
 
-   // The OSC address of the message as a string.
+   // The OSC address of the message as a string. This is the prepended part from max. e.g. /Pitch or /Volume.
    public string Address;
 
    // The list of values to be delivered to the Address.
@@ -29,6 +29,8 @@ using System;
       private UDPPacketIO OscPacketIO;
       Thread ReadThread;
       private bool ReaderRunning;
+    
+      // Method that reads the message and executes corrosponding method.
       private OscMessageHandler AllMessageHandler;
       Hashtable AddressTable;
 
@@ -37,7 +39,8 @@ using System;
 		//do nothing, init must be called
 	}
 
-	public void init(UDPPacketIO oscPacketIO){
+	public void init(UDPPacketIO oscPacketIO)
+    {
 	  OscPacketIO = oscPacketIO;
 
       // Create the hashtable for the address lookup mechanism
@@ -89,11 +92,11 @@ using System;
                 //Debug.Log("received packed of len=" + length);
                 if (length > 0)
                 {
-                    ArrayList messages = Osc.PacketToOscMessages(buffer, length);
+                    ArrayList messages = PacketToOscMessages(buffer, length);
          
                     foreach (OscMessage om in messages)
                     {
-                        Debug.Log(om.ToString());
+                        Debug.Log(om.Address);
                         if (AllMessageHandler != null)
                             AllMessageHandler(om);
                         OscMessageHandler h = (OscMessageHandler)Hashtable.Synchronized(AddressTable)[om.Address];
@@ -101,8 +104,8 @@ using System;
                             h(om);
                     }
                 }
-                else
-                    Thread.Sleep(20);
+               // else
+                //    Thread.Sleep(20);
             }
         }
         catch (Exception e)
@@ -191,7 +194,7 @@ using System;
         // THIS METHOD CAN BE IMPROVED.
 
 
-       // Debug.Log(message);
+        Debug.Log("StringToOSCMessage");
       OscMessage oM = new OscMessage();
       // Console.WriteLine("Splitting " + message);
       string[] ss = message.Split(new char[] { ' ' });
