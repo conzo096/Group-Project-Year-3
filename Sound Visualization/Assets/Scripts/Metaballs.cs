@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-/* Metaballs.cs by Emmanuel Miras. Last edited 06/02/17
+/* Metaballs.cs by Emmanuel Miras. Last edited 07/02/17
  * Custom metaball implementation.
  * References: http://paulbourke.net/geometry/polygonise/
  *             http://paulbourke.net/geometry/implicitsurf/
@@ -17,27 +17,81 @@ public class Triangle
 public class GridCell
 {
     public Vector3[] points = new Vector3[8];
-    public double[] val = new double[8];
+    public float[] val = new float[8];
+
+    // Constructor
+    //public GridCell()
+    //{
+    //    points[0]
+    //}
 }
 
 public class Metaballs : MonoBehaviour {
 
+    public float isoLevel = 1f;
+
+    private GridCell theGrid = new GridCell();
+    private Triangle[] triangles = new Triangle[1];
+    private Mesh mesh;
+
+    // Grid size?
+    private int NX;
+    private int NY;
+    private int NZ;
+
 	// Use this for initialization
-	void Start () {
-	
-	}
+	void Start ()
+    {
+        mesh = GetComponent<MeshFilter>().mesh;
+
+        NX = 200;
+        NX = 160;
+        NX = 160;
+
+        // TODO: Create GridCell
+
+    }
 	
 	// Update is called once per frame
-	void Update () {
-	
+	void Update ()
+    {
+        int ntriang = Polygonize(theGrid, isoLevel, ref triangles);
+
+        // Update the stuff on mesh filter
+
+        //int[] temp = new int[ntriang];
+        //
+        //for (int i = 0; i < ntriang; i+=9)
+        //{
+        //    temp[i] = ( int)triangles[i].points[0].x;
+        //    temp[i + 1] = (int)triangles[i].points[0].y;
+        //    temp[i + 2] = (int)triangles[i].points[0].z;
+        //
+        //    temp[i + 4] = (int)triangles[i].points[1].x;
+        //    temp[i + 5] = (int)triangles[i].points[1].y;
+        //    temp[i + 6] = (int)triangles[i].points[1].z;
+        //
+        //    temp[i + 7] = (int)triangles[i].points[2].x;
+        //    temp[i + 8] = (int)triangles[i].points[2].y;
+        //    temp[i + 9] = (int)triangles[i].points[2].z;
+        //}
+        //mesh.triangles = temp;
+        
 	}
 
 
+    /*
+    Given a grid cell and an isolevel, calculate the triangular
+    facets required to represent the isosurface through the cell.
+    Return the number of triangular facets, the array "triangles"
+    will be loaded up with the vertices at most 5 triangular facets.
+	0 will be returned if the grid cell is either totally above
+    of totally below the isolevel.
+    */
 
-
-    public int Polygonize(GridCell grid, double isoLevel, Triangle triangles)
+    public int Polygonize(GridCell grid, float isoLevel, ref Triangle[] triangles)
     {
-        int i, ntriang;
+        int ntriang;
         int cubeIndex = 0;
         Vector3[] vertList = new Vector3[12];
 
@@ -61,36 +115,58 @@ public class Metaballs : MonoBehaviour {
 
         int edgeIndex = edgeTable[cubeIndex];
         /* Find the vertices where the surface intersects the cube */
-        if ((edgeIndex & 1) > 0) { /* Do stuff */ }
-        if ((edgeIndex & 2) > 0) { /* Do stuff */ }
-        if ((edgeIndex & 4) > 0) { /* Do stuff */ }
-        if ((edgeIndex & 8) > 0) { /* Do stuff */ }
-        if ((edgeIndex & 16) > 0) { /* Do stuff */ }
-        if ((edgeIndex & 32) > 0) { /* Do stuff */ }
-        if ((edgeIndex & 64) > 0) { /* Do stuff */ }
-        if ((edgeIndex & 128) > 0) { /* Do stuff */ }
-        if ((edgeIndex & 256) > 0) { /* Do stuff */ }
-        if ((edgeIndex & 512) > 0) { /* Do stuff */ }
-        if ((edgeIndex & 1024) > 0) { /* Do stuff */ }
-        if ((edgeIndex & 2048) > 0) { /* Do stuff */ }
+        if ((edgeIndex & 1) > 0)    { vertList[0] = VertexInterp(isoLevel, grid.points[0], grid.points[1], grid.val[0], grid.val[1]); }
+        if ((edgeIndex & 2) > 0)    { vertList[1] = VertexInterp(isoLevel, grid.points[1], grid.points[2], grid.val[1], grid.val[2]); }
+        if ((edgeIndex & 4) > 0)    { vertList[2] = VertexInterp(isoLevel, grid.points[2], grid.points[3], grid.val[2], grid.val[3]); }
+        if ((edgeIndex & 8) > 0)    { vertList[3] = VertexInterp(isoLevel, grid.points[3], grid.points[0], grid.val[3], grid.val[0]); }
+        if ((edgeIndex & 16) > 0)   { vertList[4] = VertexInterp(isoLevel, grid.points[4], grid.points[5], grid.val[4], grid.val[5]); }
+        if ((edgeIndex & 32) > 0)   { vertList[5] = VertexInterp(isoLevel, grid.points[5], grid.points[6], grid.val[5], grid.val[6]); }
+        if ((edgeIndex & 64) > 0)   { vertList[6] = VertexInterp(isoLevel, grid.points[6], grid.points[7], grid.val[6], grid.val[7]); }
+        if ((edgeIndex & 128) > 0)  { vertList[7] = VertexInterp(isoLevel, grid.points[7], grid.points[4], grid.val[7], grid.val[4]); }
+        if ((edgeIndex & 256) > 0)  { vertList[8] = VertexInterp(isoLevel, grid.points[0], grid.points[4], grid.val[0], grid.val[4]); }
+        if ((edgeIndex & 512) > 0)  { vertList[9] = VertexInterp(isoLevel, grid.points[1], grid.points[5], grid.val[1], grid.val[5]); }
+        if ((edgeIndex & 1024) > 0) { vertList[10] = VertexInterp(isoLevel, grid.points[2], grid.points[6], grid.val[2], grid.val[6]); }
+        if ((edgeIndex & 2048) > 0) { vertList[11] = VertexInterp(isoLevel, grid.points[3], grid.points[7], grid.val[3], grid.val[7]); }
 
         /* Create the triangle */
         ntriang = 0;
 
-        // TODO: sort this out
+        for (int i = 0; triTable[cubeIndex, i]!=-1; i+=3)
+        {
+            triangles[ntriang].points[0] = vertList[triTable[cubeIndex, i]];
+            triangles[ntriang].points[1] = vertList[triTable[cubeIndex, i + 1]];
+            triangles[ntriang].points[2] = vertList[triTable[cubeIndex, i + 2]];
+            ntriang++;
+        }
 
-        //for (i = 0; triTable[cubeIndex][i]!=-1; i+=3)
-        //{
-        //triangles[ntriang].p[0] = vertlist[triTable[cubeindex][i  ]];
-        //triangles[ntriang].p[1] = vertlist[triTable[cubeindex][i + 1]];
-        //triangles[ntriang].p[2] = vertlist[triTable[cubeindex][i + 2]];
-        //ntriang++;
-        //}
+        // Assign vertices to mesh filter
+        mesh.vertices = vertList;
 
         return ntriang;
     }
 
+    /*
+    Linearly interpolate the position where an isosurface cuts
+    an edge between two vertices, each with their own scalar value
+    */
+    Vector3 VertexInterp(float isoLevel, Vector3 p1, Vector3 p2, float valp1, float valp2)
+    {
+        float mu;
+        Vector3 point = new Vector3();
+        if (Mathf.Abs(isoLevel - valp1) < 0.00001)
+            return p1;
+        if (Mathf.Abs(isoLevel - valp2) < 0.00001)
+            return p2;
+        if (Mathf.Abs(valp1 - valp2) < 0.00001)
+            return p1;
+        mu = (isoLevel - valp1) / (valp2 - valp1);
 
+        point.x = p1.x + mu * (p2.x - p1.x);
+        point.y = p1.y + mu * (p2.y - p1.y);
+        point.z = p1.z + mu * (p2.z - p1.z);
+
+        return point;
+    }
 
     // Tritable: http://paulbourke.net/geometry/polygonise/
     private int[,] triTable = new int[,]
