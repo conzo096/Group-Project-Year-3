@@ -17,6 +17,15 @@ public class ModifiableAttributes
     // Position of the mesh.
     private Vector3 position = new Vector3(0,0,0);
 
+    // Attributes that can be changed for particle ring.
+    // Speed particles move at.
+    private float particleSpeed = 0;
+    // Size of smoke ring.
+    private float ringRadius = 0;
+    // Instances of particles.
+    private int particleInstances = 0;
+
+
     public ModifiableAttributes()
     {
 
@@ -50,16 +59,55 @@ public class ModifiableAttributes
         }
     }
 
-    public float ZRotation
+    public Vector3 Position
     {
         get
         {
-            return rotation.z;
+            return position;
         }
+
         set
         {
-            // Do we want minus values to be inputted?
-            rotation.z = value;
+            position = value;
+        }
+    }
+
+    public float ParticleSpeed
+    {
+        get
+        {
+            return particleSpeed;
+        }
+
+        set
+        {
+            particleSpeed = value;
+        }
+    }
+
+    public float RingRadius
+    {
+        get
+        {
+            return ringRadius;
+        }
+
+        set
+        {
+            ringRadius = value;
+        }
+    }
+
+    public int ParticleInstances
+    {
+        get
+        {
+            return particleInstances;
+        }
+
+        set
+        {
+            particleInstances = value;
         }
     }
 }

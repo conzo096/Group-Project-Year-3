@@ -35,7 +35,8 @@ using System;
       Hashtable AddressTable;
 
 
-	void Start() {
+	void Start()
+    {
 		//do nothing, init must be called
 	}
 
@@ -89,7 +90,6 @@ using System;
             {
                 byte[] buffer = new byte[1000];
                 int length = OscPacketIO.ReceivePacket(buffer);
-                //Debug.Log("received packed of len=" + length);
                 if (length > 0)
                 {
                     ArrayList messages = PacketToOscMessages(buffer, length);
@@ -410,9 +410,10 @@ using System;
     }
 
 
-    // Extracts a messages from a packet.
+    // Extracts a messages from a packet. - Need to debug this method, unsure how it works (Conner).
     private static int ExtractMessage(ArrayList messages, byte[] packet, int start, int length)
     {
+
       OscMessage oscM = new OscMessage();
       oscM.Address = ExtractString(packet, start, length);
       int index = start + PadSize(oscM.Address.Length+1);

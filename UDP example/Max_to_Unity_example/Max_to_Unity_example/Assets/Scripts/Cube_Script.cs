@@ -64,27 +64,26 @@ public class Cube_Script : MonoBehaviour
     // msgAddress is a poor variable name. It is actually what musical parameter (e.g. pitch, frequency etc)
     public void AllMessageHandler(OscMessage oscMessage)
     {
-    //   var msgString = Osc.OscMessageToString(oscMessage);
-        var msgAddress = oscMessage.Address; //the message parameters
-        msgValue = oscMessage.Values[0]; //the message value
-                                     //    Debug.Log(msgString); //log the message and values coming from OSC 
-                                         //Debug.Log(msgAddress); //log the message coming from OSC
+        // Send message to reroute message.
+        Reroutemessage newMessage = new Reroutemessage();
+        newMessage.ConvertOSCMessage(oscMessage);
+
+        string msgAttribute = newMessage.Attribute;
+        object value = newMessage.AttributeValue;
 
         //FUNCTIONS YOU WANT CALLED WHEN A SPECIFIC MESSAGE IS RECEIVED - these get sent to variables and functions before the update, i think...
-        switch (msgAddress)
+        switch (msgAttribute)
         {
             case "/Rotate":
                 attributeList.Rotation = new Vector3((float)msgValue, (float)msgValue, (float)msgValue);
-                //zRot = (float) msgValue;
                 Debug.Log("Rotate msgValue is " + attributeList.Rotation);  
                 break;
             case "/Scale":
                 attributeList.Scale = new Vector3((float) msgValue, (float)msgValue, (float)msgValue);
-              //  allScale = (float) msgValue;
                 Debug.Log("Scale msgValue is " + attributeList.Scale ); 
                 break;
             default:
-                Debug.Log(msgAddress + " does not exist...");
+                Debug.Log(msgAttribute + " does not exist...");
                 break;
                
         }
