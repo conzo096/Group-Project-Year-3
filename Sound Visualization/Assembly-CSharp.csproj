@@ -45,8 +45,17 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+     <Compile Include="Assets\Scripts\BouncingBall.cs" />
+     <Compile Include="Assets\Scripts\Container.cs" />
+     <Compile Include="Assets\Scripts\CubeGrid.cs" />
      <Compile Include="Assets\Scripts\InitShape.cs" />
      <Compile Include="Assets\Scripts\MCBlob.cs" />
+     <Compile Include="Assets\Scripts\MetaBall.cs" />
+     <Compile Include="Assets\Scripts\MetaLight.cs" />
+     <Compile Include="Assets\Scripts\Metaballs.cs" />
+     <Compile Include="Assets\Scripts\RingController.cs" />
+     <None Include="Assets\Shaders\MarchingCubesComputeShader.compute" />
+     <None Include="Assets\Shaders\MetaballShader.shader" />
  <Reference Include="UnityEngine.UI">
  <HintPath>C:/Program Files/Unity/Editor/Data/UnityExtensions/Unity/GUISystem/UnityEngine.UI.dll</HintPath>
  </Reference>
