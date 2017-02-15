@@ -52,6 +52,7 @@
      <Compile Include="Assets\Scripts\MCBlob.cs" />
      <Compile Include="Assets\Scripts\MetaBall.cs" />
      <Compile Include="Assets\Scripts\MetaLight.cs" />
+     <Compile Include="Assets\Scripts\MetaballController.cs" />
      <Compile Include="Assets\Scripts\Metaballs.cs" />
      <Compile Include="Assets\Scripts\RingController.cs" />
      <None Include="Assets\Shaders\MarchingCubesComputeShader.compute" />
