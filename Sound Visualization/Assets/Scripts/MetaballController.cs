@@ -6,6 +6,8 @@ public class MetaballController : MonoBehaviour {
     // Number of rings
     public int metaballInstances;
     public GameObject metaball;
+    public GameObject metaballCenter;
+    private float rotationCount;
     // Use this for initialization
     void Start ()
     {
@@ -13,11 +15,17 @@ public class MetaballController : MonoBehaviour {
         if (metaballInstances == 0)
             metaballInstances = 1;
 
+        // Put the main metaball in the center
+        GameObject center = Instantiate(metaballCenter) as GameObject;
+        center.transform.parent = this.transform;
+        center.transform.localPosition = new Vector3(0f, 0f, 0f);
+        rotationCount = 0;
+        // Instantiate other metaballs
         for (int i = 0; i < metaballInstances; i++)
         {
             GameObject childObject = Instantiate(metaball) as GameObject;
             childObject.transform.parent = this.transform;
-            childObject.transform.localPosition = new Vector3(0f, 0f, 0f);
+            childObject.transform.localPosition = new Vector3(0.5f, 0f, 0f);
         }
     }
 	
@@ -32,10 +40,13 @@ public class MetaballController : MonoBehaviour {
             // Create metaballs as children
             for (int i = 0; i < instancesToCreate; i++)
             {
-
                 GameObject childObject = Instantiate(metaball) as GameObject;
                 childObject.transform.parent = this.transform;
-                childObject.transform.localPosition = new Vector3(0f, 0f, 0f);
+                //childObject.transform.localPosition = new Vector3(0.5f, 0f, 0f);
+                childObject.transform.localPosition = new Vector3(Random.Range(-0.3f, 0.3f), Random.Range(-0.3f, 0.3f), Random.Range(-0.3f, 0.3f));
+                //childObject.transform.RotateAround(Vector3.zero, Vector3.forward, rotationCount);
+                //childObject.transform.position.Normalize();
+                //rotationCount += 100;
             }
         }
 
@@ -47,7 +58,7 @@ public class MetaballController : MonoBehaviour {
 
             foreach (Transform child in transform)
             {
-                if (instancesToDelete == 0)
+                if (instancesToDelete == 0 || child.tag.Equals("MetaballCenter"))
                 {
                     continue;
                 }
@@ -59,5 +70,8 @@ public class MetaballController : MonoBehaviour {
 
             }
         }
+
+
+            
     }
 }
