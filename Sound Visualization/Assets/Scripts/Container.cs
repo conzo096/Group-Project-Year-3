@@ -17,7 +17,7 @@ public static class NormalSolver
 
         return Vector3.Cross(sideAB, sideAC).normalized;
     }
-
+    // TODO: Calculate normals on Shader
     public static void RecalculateNormals(this Mesh mesh)
     {
         var triangles = mesh.GetTriangles(0);
@@ -72,6 +72,7 @@ public static class NormalSolver
             entry.Add(vertexIndexC, triIndex);
         }
 
+        // TODO: try and avoid for each
         // For each point in space
         foreach (var value in dictionary.Values)
         {
@@ -160,6 +161,7 @@ public class Container : MonoBehaviour
     public float resolution;
     public float threshold;
     public ComputeShader computeShader;
+    public ComputeShader normalComputeShader;
     public bool calculateNormalsWithUnityBuiltIn;
 
     private CubeGrid grid;
