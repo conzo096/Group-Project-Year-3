@@ -31,3 +31,7 @@ sysinfo.txt
 *.apk
 *.unitypackage
 *.meta
+UI/UI Prototype/Library/metadata/
+UI/UI Prototype/Temp/
+UDP example/Max_to_Unity_example/Max_to_Unity_example/Temp/UnityLockfile
+Sound Visualization/Library/metadata/
