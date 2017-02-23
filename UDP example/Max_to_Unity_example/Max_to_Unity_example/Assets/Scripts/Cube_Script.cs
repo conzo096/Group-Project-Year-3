@@ -14,11 +14,12 @@ public class Cube_Script : MonoBehaviour
 
     //VARIABLES YOU WANT TO BE ANIMATED
     private float zRot = 0; //the rotation around the z axis
-    private float allScale = 0; //the scale around all axis
+    private float allScale = 1; //the scale around all axis
     private GameObject go1;
     private object msgValue;            //value passed in via OSC
     private int reset;
 
+    LineController lineController;
 
 
     public void Start()
@@ -38,7 +39,7 @@ public class Cube_Script : MonoBehaviour
         //particles = GetComponent<PlaygroundParticlesC>();
         
         go1 = GameObject.Find("/Cube"); //assign the game object to the go variable
-       
+        GameObject.Find("LineManager").GetComponent<LineController>();
     }
 
 
@@ -56,22 +57,30 @@ public class Cube_Script : MonoBehaviour
     //   var msgString = Osc.OscMessageToString(oscMessage);
         var msgAddress = oscMessage.Address; //the message parameters
         msgValue = oscMessage.Values[0]; //the message value
-                                     //    Debug.Log(msgString); //log the message and values coming from OSC 
+                                         //    Debug.Log(msgString); //log the message and values coming from OSC 
                                          //Debug.Log(msgAddress); //log the message coming from OSC
 
         //FUNCTIONS YOU WANT CALLED WHEN A SPECIFIC MESSAGE IS RECEIVED - these get sent to variables and functions before the update, i think...
+
+        object[] newMessage = new object[2];
+        // 0 is the address.
+        newMessage[0] = msgAddress;
+        newMessage[1] = msgValue;
+
+        // Check line manager.
+        msgAddress = lineController.FindMeshParameter(msgAddress);
         switch (msgAddress)
         {
+           
             //default:
             case "/Rotate":
-                zRot = (float) msgValue;
-			Debug.Log("Rotate msgValue is " + zRot);  
+                zRot = (float)msgValue;
+                Debug.Log("Rotate msgValue is " + zRot);
                 break;
             case "/Scale":
-                allScale = (float) msgValue;
-                Debug.Log("Scale msgValue is " + allScale ); 
+                allScale = (float)msgValue;
+                Debug.Log("Scale msgValue is " + allScale);
                 break;
-              
         }
 
 
