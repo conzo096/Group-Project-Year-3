@@ -47,6 +47,8 @@
   <ItemGroup>
      <Compile Include="Assets\Scripts\InitShape.cs" />
      <Compile Include="Assets\Scripts\MCBlob.cs" />
+     <Compile Include="Assets\Scripts\Metaballs.cs" />
+     <Compile Include="Assets\Scripts\RingController.cs" />
  <Reference Include="UnityEngine.UI">
  <HintPath>C:/Program Files/Unity/Editor/Data/UnityExtensions/Unity/GUISystem/UnityEngine.UI.dll</HintPath>
  </Reference>
