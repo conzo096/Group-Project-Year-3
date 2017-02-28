@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System;
+using System.Linq;
 public static class NormalSolver
 {
     // Resources: http://schemingdeveloper.com/2014/10/17/better-method-recalculate-normals-unity/
@@ -74,43 +75,90 @@ public static class NormalSolver
 
         // TODO: try and avoid for each
         // For each point in space
-        foreach (var value in dictionary.Values)
+
+        //foreach (var value in dictionary.Values)
+        //{
+        //    // For each triangle T1 that point belongs to
+        //    for (var i = 0; i < value.Count; ++i)
+        //    {
+        //        var sum = new Vector3();
+        //        // For each other triangle T2 (including self) that point belongs to
+        //        
+        //        for (var j = 0; j < value.Count; ++j)
+        //        {
+        //            // The corresponding vertex is actually the same vertex
+        //            if (value.VertexIndex[i] == value.VertexIndex[j])
+        //            {
+        //                // Add to temporary Vector3
+        //                sum += triNormals[value.TriangleIndex[j]];
+        //            }
+        //            else
+        //            {
+        //                float dot = Vector3.Dot(
+        //                    triNormals[value.TriangleIndex[i]],
+        //                    triNormals[value.TriangleIndex[j]]);
+        //                dot = Mathf.Clamp(dot, -0.99999f, 0.99999f);
+        //                float acos = Mathf.Acos(dot);
+        //                // The angle between the two triangles is less than the smoothing angle
+        //                if (acos <= angle)
+        //                {
+        //                    // Add to temporary Vector3
+        //                    sum += triNormals[value.TriangleIndex[j]];
+        //                }
+        //            }
+        //        }
+        //        // Normalize temporary Vector3 to find the average
+        //        normals[value.VertexIndex[i]] = sum.normalized;
+        //    }
+        //}
+
+        //mesh.normals = normals;
+
+        List<VertexKey> test = dictionary.Keys.ToList();
+        VertexEntry a;
+        var sum = new Vector3();
+        for (int outer = 0; outer < dictionary.Values.Count; outer++)
         {
+            a = dictionary[test[outer]];
+            int size = a.Count;
             // For each triangle T1 that point belongs to
-            for (var i = 0; i < value.Count; ++i)
+            for (var i = 0; i < size; ++i)
             {
-                var sum = new Vector3();
+                
                 // For each other triangle T2 (including self) that point belongs to
-                for (var j = 0; j < value.Count; ++j)
+                for (var j = 0; j < size; ++j)
                 {
                     // The corresponding vertex is actually the same vertex
-                    if (value.VertexIndex[i] == value.VertexIndex[j])
+                    if (a.VertexIndex[i] == a.VertexIndex[j])
                     {
                         // Add to temporary Vector3
-                        sum += triNormals[value.TriangleIndex[j]];
+                        sum += triNormals[a.TriangleIndex[j]];
                     }
                     else
                     {
                         float dot = Vector3.Dot(
-                            triNormals[value.TriangleIndex[i]],
-                            triNormals[value.TriangleIndex[j]]);
+                            triNormals[a.TriangleIndex[i]],
+                            triNormals[a.TriangleIndex[j]]);
                         dot = Mathf.Clamp(dot, -0.99999f, 0.99999f);
                         float acos = Mathf.Acos(dot);
                         // The angle between the two triangles is less than the smoothing angle
                         if (acos <= angle)
                         {
                             // Add to temporary Vector3
-                            sum += triNormals[value.TriangleIndex[j]];
+                            sum += triNormals[a.TriangleIndex[j]];
                         }
                     }
                 }
                 // Normalize temporary Vector3 to find the average
-                normals[value.VertexIndex[i]] = sum.normalized;
+                normals[a.VertexIndex[i]] = sum.normalized;
+                sum = Vector3.zero;
             }
         }
-
+        
         mesh.normals = normals;
-    }
+
+}
+
 
     private struct VertexKey
     {
@@ -127,6 +175,17 @@ public static class NormalSolver
             _y = (long)(Mathf.Round(position.y * Tolerance));
             _z = (long)(Mathf.Round(position.z * Tolerance));
         }
+        public override bool Equals(object obj)
+        {
+            var key = (VertexKey)obj;
+            return _x == key._x && _y == key._y && _z == key._z;
+        }
+
+        public override int GetHashCode()
+        {
+            return (_x * 7 ^ _y * 13 ^ _z * 27).GetHashCode();
+        }
+
     }
 
     private sealed class VertexEntry
