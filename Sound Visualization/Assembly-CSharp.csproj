@@ -1,11 +1,12 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>10.0.20506</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <RootNamespace></RootNamespace>
+    <RootNamespace>
+    </RootNamespace>
     <ProjectGuid>{C94C53C1-5D3D-D622-DD09-9E4437A9C908}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
@@ -45,27 +46,28 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-     <Compile Include="Assets\Scripts\BouncingBall.cs" />
-     <Compile Include="Assets\Scripts\Container.cs" />
-     <Compile Include="Assets\Scripts\CubeGrid.cs" />
-     <Compile Include="Assets\Scripts\InitShape.cs" />
-     <Compile Include="Assets\Scripts\MCBlob.cs" />
-     <Compile Include="Assets\Scripts\MetaBall.cs" />
-     <Compile Include="Assets\Scripts\MetaLight.cs" />
-     <Compile Include="Assets\Scripts\MetaballController.cs" />
-     <Compile Include="Assets\Scripts\Metaballs.cs" />
-     <Compile Include="Assets\Scripts\RingController.cs" />
-     <None Include="Assets\Shaders\MarchingCubesComputeShader.compute" />
-     <None Include="Assets\Shaders\MetaballShader.shader" />
- <Reference Include="UnityEngine.UI">
- <HintPath>C:/Program Files/Unity/Editor/Data/UnityExtensions/Unity/GUISystem/UnityEngine.UI.dll</HintPath>
- </Reference>
- <Reference Include="UnityEngine.Networking">
- <HintPath>C:/Program Files/Unity/Editor/Data/UnityExtensions/Unity/Networking/UnityEngine.Networking.dll</HintPath>
- </Reference>
- <Reference Include="UnityEngine.Analytics">
- <HintPath>C:/Program Files/Unity/Editor/Data/UnityExtensions/Unity/UnityAnalytics/UnityEngine.Analytics.dll</HintPath>
- </Reference>
+    <Compile Include="Assets\Scripts\BouncingBall.cs" />
+    <Compile Include="Assets\Scripts\Container.cs" />
+    <Compile Include="Assets\Scripts\CubeGrid.cs" />
+    <Compile Include="Assets\Scripts\InitShape.cs" />
+    <Compile Include="Assets\Scripts\MCBlob.cs" />
+    <Compile Include="Assets\Scripts\MetaBall.cs" />
+    <Compile Include="Assets\Scripts\MetaLight.cs" />
+    <Compile Include="Assets\Scripts\MetaballController.cs" />
+    <Compile Include="Assets\Scripts\Metaballs.cs" />
+    <Compile Include="Assets\Scripts\RingController.cs" />
+    <None Include="Assets\Shaders\MarchingCubesComputeShader.compute" />
+    <None Include="Assets\Shaders\MetaballShader.shader" />
+    <None Include="Assets\Shaders\NormalCalc.compute" />
+    <Reference Include="UnityEngine.UI">
+      <HintPath>C:/Program Files/Unity/Editor/Data/UnityExtensions/Unity/GUISystem/UnityEngine.UI.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.Networking">
+      <HintPath>C:/Program Files/Unity/Editor/Data/UnityExtensions/Unity/Networking/UnityEngine.Networking.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.Analytics">
+      <HintPath>C:/Program Files/Unity/Editor/Data/UnityExtensions/Unity/UnityAnalytics/UnityEngine.Analytics.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
@@ -75,5 +77,4 @@
   <Target Name="AfterBuild">
   </Target>
   -->
-  
 </Project>
