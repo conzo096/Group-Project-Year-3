@@ -30,4 +30,13 @@ sysinfo.txt
 # Builds
 *.apk
 *.unitypackage
+<<<<<<< HEAD
 UI/UI Prototype/Library/metadata/
+=======
+*.meta
+*.info
+UI/UI Prototype/Library/metadata/
+UI/UI Prototype/Temp/
+UDP example/Max_to_Unity_example/Max_to_Unity_example/Temp/UnityLockfile
+Sound Visualization/Library/metadata/
+>>>>>>> refs/remotes/origin/UI

@@ -46,6 +46,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+<<<<<<< HEAD
     <Compile Include="Assets\Scripts\BouncingBall.cs" />
     <Compile Include="Assets\Scripts\Container.cs" />
     <Compile Include="Assets\Scripts\CubeGrid.cs" />
@@ -68,6 +69,21 @@
     <Reference Include="UnityEngine.Analytics">
       <HintPath>C:/Program Files/Unity/Editor/Data/UnityExtensions/Unity/UnityAnalytics/UnityEngine.Analytics.dll</HintPath>
     </Reference>
+=======
+     <Compile Include="Assets\Scripts\InitShape.cs" />
+     <Compile Include="Assets\Scripts\MCBlob.cs" />
+     <Compile Include="Assets\Scripts\Metaballs.cs" />
+     <Compile Include="Assets\Scripts\RingController.cs" />
+ <Reference Include="UnityEngine.UI">
+ <HintPath>C:/Program Files/Unity/Editor/Data/UnityExtensions/Unity/GUISystem/UnityEngine.UI.dll</HintPath>
+ </Reference>
+ <Reference Include="UnityEngine.Networking">
+ <HintPath>C:/Program Files/Unity/Editor/Data/UnityExtensions/Unity/Networking/UnityEngine.Networking.dll</HintPath>
+ </Reference>
+ <Reference Include="UnityEngine.Analytics">
+ <HintPath>C:/Program Files/Unity/Editor/Data/UnityExtensions/Unity/UnityAnalytics/UnityEngine.Analytics.dll</HintPath>
+ </Reference>
+>>>>>>> refs/remotes/origin/UI
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
