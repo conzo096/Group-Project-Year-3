@@ -1,4 +1,8 @@
-﻿using UnityEngine;
+﻿/* Line Controller class by Conner Weatherston. Last edited: 07/03/2017
+ * This class controls the creation, deletion and searching of line connections between parameters.
+ */
+
+using UnityEngine;
 using System.Collections;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
@@ -14,15 +18,12 @@ public class LineController : MonoBehaviour
     public ArrayList audioPos;
     public ArrayList meshPos;
 
+    // Rename these two variables.
     // What visual effect has been selected.
-    public bool selectedMesh;
     public GameObject sm;
     // What audio parameter has been selected.
-    public bool selectedAudio;
     public GameObject sa;
 
-    // Line selected.
-    public bool selectedLine;
 
     int lineCounter =0;
 
@@ -31,11 +32,8 @@ public class LineController : MonoBehaviour
         // Initial variables.
         audioPos = new ArrayList();
         meshPos = new ArrayList();
-        selectedAudio = false;
-        selectedMesh = false;
-        selectedLine = false;
         // Add all the UI features into correct lists.
-        foreach (GameObject obj in GameObject.FindGameObjectsWithTag("MeshButton"))
+        foreach (GameObject obj in GameObject.FindGameObjectsWithTag("VisualButton"))
         {
             meshPos.Add(obj);
         }
@@ -48,16 +46,26 @@ public class LineController : MonoBehaviour
 
     public void Update()
     {
-        //Debug.Log(Camera.main.ScreenPointToRay(Input.mousePosition).origin);
-        // If a visual and audio property has been selected, create a line and add to list of lines.
-        if (selectedMesh && selectedAudio)
+
+        // Check if two options have been selected, if so, create a line and reset parameters.
+        if (sm != null && sa != null)
         {
-            DrawGuiLine(sa.transform.position, sm.transform.position);
-            selectedAudio = false;
-            selectedMesh = false;
+            DrawLineConnection(sa.transform.position, sm.transform.position);
+            // This resets the event system to prevent the second option being automatically selected.
+            GameObject myEventSystem = GameObject.Find("EventSystem");
+            myEventSystem.GetComponent<EventSystem>().SetSelectedGameObject(null);
+            sm = null;
+            sa = null;
         }
 
+        // Detect if any of the lines have been selected by the user, if so destroy the connection.
+        LineSelectedCheck();
 
+    }
+
+    // Check if any of the line connections have been selected.
+    private void LineSelectedCheck()
+    {
         if (Input.GetMouseButtonDown(0))
         {
             var ray = Camera.main.ScreenPointToRay(Input.mousePosition);
@@ -67,31 +75,29 @@ public class LineController : MonoBehaviour
                 // Need to find out how to get parent of collider.
                 if (hit.collider.tag == "LineConnection")
                 {
-                    selectedLine = true;
                     Debug.Log("well done, you managed to press the line. ");
-                    RemoveLine(hit.collider.gameObject);
-                    Destroy(hit.collider.gameObject, 2);     
+                    RemoveLine(hit.collider.gameObject.GetComponent<LineConnection>());
+                    Destroy(hit.collider.gameObject, 2);
                 }
-            }  
+            }
         }
-
     }
 
+
+    // Constantly check if the user has selected any audio or visual parameters.
     public void OnGUI()
     {
         foreach (GameObject obj in meshPos)
         {
-            if (EventSystem.current.currentSelectedGameObject == obj && selectedMesh == false)
+            if (EventSystem.current.currentSelectedGameObject == obj)
             {
-                selectedMesh = true;
                 sm = obj;
             }
         }
         foreach (GameObject obj in audioPos)
         {
-            if (EventSystem.current.currentSelectedGameObject == obj && selectedAudio == false)
+            if (EventSystem.current.currentSelectedGameObject == obj)
             {
-                selectedAudio = true;
                 sa = obj;
             }
         }
@@ -99,38 +105,26 @@ public class LineController : MonoBehaviour
     }
 
 
-    // Draws the line, just in the incorrect place.
-    public void DrawGuiLine(Vector3 start, Vector3 end)
+    // Create a new Game object which contains all the information for the line connection.
+    public void DrawLineConnection(Vector3 start, Vector3 end)
     {
-
+        // Initalise new object.
         GameObject lineObj = new GameObject();
+        // Set the layer to UI.
         lineObj.layer = 5;
         lineObj.tag = "LineConnection";
         lineObj.name = "LineConnection(" + lineCounter + ")";
-   //     lineObj.AddComponent<Image>();
-  //      lineObj.AddComponent<Button>();
-
-        //lineObj.transform.SetParent(GameObject.Find("Panel").transform);
-
-   /*     RectTransform rt = lineObj.GetComponent<RectTransform>();
-        rt.sizeDelta = new Vector2(1, Vector3.Distance(start, end));
-        rt.anchoredPosition = new Vector2(0, 0);
-        Vector3 pos = Vector3.Lerp(start, end, 0.5f);
-        rt.transform.position = pos;
-        rt.transform.localPosition = new Vector3(0, 0, 0);
-
-    */
+ 
         // Create visual line between two connected parameters.
         lineObj.AddComponent<LineRenderer>();
         LineRenderer lineObjRend = lineObj.GetComponent<LineRenderer>();
         lineObjRend.SetPosition(0, start);
         lineObjRend.SetPosition(1, end);
+        // LineCounter is just to keep track of Line game objects.
         lineCounter++;
 
-        lineObj.AddComponent<BoxCollider>();
-
-
-        // Add a collider to the line. - Need to readjust formaula. 
+        // Add a collider to the line. - Need to readjust formaula.
+        lineObj.AddComponent<BoxCollider>(); 
         BoxCollider col = lineObj.GetComponent<BoxCollider>();
         float lineLength = Vector3.Distance(start, end); // length of line
         col.size = new Vector3(lineLength, 3f, 2f); // size of collider is set where X is length of line, Y is width of line, Z will be set as per requirement
@@ -150,21 +144,61 @@ public class LineController : MonoBehaviour
         // Add the line connection class to the line.
         lineObj.AddComponent<LineConnection>();
         LineConnection newLine = lineObj.GetComponent<LineConnection>();
-        newLine.VisualConnection = sm.GetComponentInChildren<Text>().text;
-        newLine.AudioConnection = sa.GetComponentInChildren<Text>().text;
-        lineCollection.Add(lineObj);
+        // Set the connection parameters. - This needs more detail as it will not work with Jacks UI. 
 
+        newLine.VisualConnection = ConvertVisualText(sm.GetComponentInChildren<Text>().text);
+        newLine.AudioConnection = ConvertAudioText(sa.GetComponentInChildren<Text>().text);
+        // Set the parent of the line to the canvas.
         lineObj.transform.SetParent(GameObject.Find("Canvas").transform);
+
+        // Add this line to the array of connections.
+        if (!CheckLineMatch(newLine))
+            lineCollection.Add(newLine);
+        else
+            Destroy(lineObj);
     }
 
-    public void AddNewLine(string[] pair)
+    // CONVERTION METHODS ARE NOT FULLY IMPLEMENTED.
+
+    // Converts message from the UI to valid one for the max-unity message.
+    private string ConvertAudioText(string s)
     {
-        string[] newLine = new string[2];
-        newLine = pair;
-        lineCollection.Add(newLine);
+        // Check for audio parameters.
+        if (s.ToLower().Contains("pitch"))
+            return "/Pitch";
+        if (s.ToLower().Contains("volume"))
+            return "/Volume";
+        if (s.ToLower().Contains("amplitude"))
+            return "/Amplitude";
+
+        return "Need to convert";
     }
 
-    public bool RemoveLine(GameObject line)
+    // Converts message from the UI to valid one for the max-unity message. - DOUBLE CHECK THESE VALUES WITH THE OBJECT MANAGER.
+    private string ConvertVisualText(string s)
+    {
+        // Check for audio parameters.
+        if (s.ToLower().Contains("scale"))
+        {
+            // Check if only x,y,z or all.
+            return "/Scale";
+        }
+
+        if (s.ToLower().Contains("rotation"))
+        {
+            // Check if only x,y,z or all.
+            return "/Rotation";
+        }
+        if (s.ToLower().Contains("Translation"))
+        {
+            // Check if only x,y,z or all.
+            return "/Translate";
+        }
+        return "Need to convert";
+    }
+
+    // Remove the line from the scene/ Detach connection. - DOUBLE CHECK THESE VALUES WITH THE OBJECT MANAGER.
+    public bool RemoveLine(LineConnection line)
     {
         if (lineCollection.Contains(line))
         {
@@ -172,11 +206,23 @@ public class LineController : MonoBehaviour
             return true;
         }
         return false;
-    } 
+    }
 
+    // Check if this line is already been created- This can be improved by changing data structure. Rename this method.
+    public bool CheckLineMatch(LineConnection line)
+    {
+        foreach (LineConnection obj in lineCollection)
+        {
+            if (obj.VisualConnection == line.VisualConnection
+                && obj.AudioConnection == line.AudioConnection)
+                return true;
+        }
+        return false;
+    }
+
+    // Find the corrosponding visual effect for the audio parameter
     public string FindMeshParameter(string par)
     {
-        Debug.Log(lineCollection.Count);
         foreach (LineConnection line in lineCollection)
         {
             Debug.Log(line.AudioConnection);
