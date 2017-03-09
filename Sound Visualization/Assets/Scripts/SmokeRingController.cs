@@ -1,11 +1,11 @@
 ﻿using UnityEngine;
 using System.Collections;
-/* RingController.cs by Emmanuel Miras. Last edited 26/01/17
+/* SmokeRingController.cs by Emmanuel Miras. Last edited 09/03/17
  * Attach to GameObject with a particle system. 
  * Controls a ring shaped particle system
 */
 
-public class RingController : MonoBehaviour
+public class SmokeRingController : MonoBehaviour
 {
     [Range(0, 5)]
     public float positionModulator;

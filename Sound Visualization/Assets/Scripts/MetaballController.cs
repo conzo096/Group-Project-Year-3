@@ -2,11 +2,15 @@
 using System.Collections;
 
 public class MetaballController : MonoBehaviour {
-    [Range(1, 100)]
-    // Number of rings
-    public int metaballInstances;
+    // Metaball prefab
     public GameObject metaball;
+    // Metaball prefab that is at the center
     public GameObject metaballCenter;
+
+    [Range(1, 100)]
+    // Number of metaballs
+    public int metaballInstances;
+
     private float rotationCount;
     // Use this for initialization
     void Start ()
@@ -70,8 +74,6 @@ public class MetaballController : MonoBehaviour {
 
             }
         }
-
-
             
     }
 }
