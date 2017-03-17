@@ -37,7 +37,7 @@ public abstract class Node
     }
 
     // This method should be called every frame to get the most recent value.
-    public virtual void UpdateValue() { Debug.Log("Error, this should be over-written!"); }
+    public virtual void UpdateValues() { Debug.Log("Error, this should be over-written!"); }
 
 }
 
@@ -63,10 +63,45 @@ public class AudioNode : Node
     }
 
     // Update value from osc message.
-    public override void UpdateValue()
+    public override void UpdateValues()
     {
         value = 5;
     }
+}
+
+public class vsNode : Node
+{
+    private GameObject visual;
+
+    private NoiseRingController controller;
+
+    
+
+    public vsNode(Rect r, string tag, string name)
+    {
+        rectangle = r;
+        visual = GameObject.FindGameObjectWithTag(tag);
+        controller = visual.GetComponent<NoiseRingController>();
+        this.nodeName = name;
+    }
+
+    public void UpdateValue()
+    {
+        switch (this.nodeName)
+        { 
+            case "yPosition":
+                controller.yPositionModulator = this.value;
+                break;
+            case "xRotation":
+                controller.xRotationModulator = this.value;
+                break;
+            case "yScale":
+                controller.yScaleModulator = this.value;
+                break;
+        }
+        controller.yPositionModulator = this.value;   
+    }
+
 }
 
 public class NodeEditor : EditorWindow
@@ -79,41 +114,71 @@ public class NodeEditor : EditorWindow
 
     // IDS of connected nodes.
     List<int> attachedWindows = new List<int>();
-
-   // public Node node = new Node();
-
+    int newID = 0;
+    int tempCount = 0;
+  
     [MenuItem("Window/Node Editor")]
     static void ShowEditor()
     {
         NodeEditor editor = GetWindow<NodeEditor>();
     }
 
-    // called when an right-click option is selected.
+   // called when an right-click option is selected.
     void Callback(object obj)
     {
+        //Event currentEvent = Event.current;
+       // Debug.Log(currentEvent.mousePosition);
+        Vector2 mousePos;// = currentEvent.mousePosition;
+        mousePos = new Vector2(10, 10);
         string nodeRequested = obj.ToString();
         switch (nodeRequested)
         {
             /*
              * Audio Nodes.
              */
-            case "Scale":
-                windows.Add(new AudioNode(new Rect(10, 10, 100, 100), "Scale"));
+            case "Amplitude":
+                windows.Add(new AudioNode(new Rect(mousePos.x, mousePos.y, 100, 100), "Amplitude"));
                 break;
             case "Volume":
-                windows.Add(new AudioNode(new Rect(10, 10, 100, 100), "Volume"));
+                windows.Add(new AudioNode(new Rect(mousePos.x, mousePos.y, 100, 100), "Volume"));
                 break;
             case "Pitch":
-                windows.Add(new AudioNode(new Rect(10, 10, 100, 100), "Pitch"));
+                windows.Add(new AudioNode(new Rect(mousePos.x, mousePos.y, 100, 100), "Pitch"));
+                break;
+            case "yPosition":
+                windows.Add(new vsNode(new Rect(mousePos.x, mousePos.y, 100, 100), "NoiseRing", "yPosition"));
+                break;
+            case "xRotation":
+                windows.Add(new vsNode(new Rect(mousePos.x, mousePos.y, 100, 100), "NoiseRing", "xRotation"));
+                break;
+            case "yScale":
+                windows.Add(new vsNode(new Rect(mousePos.x, mousePos.y, 100, 100), "NoiseRing", "yScale"));
                 break;
         }
     }
 
+    void Update()
+    {
+        // Make sure all visual nodes are updating their values
+        for (int i = 0; i < windows.Count; i++)
+        {
+            // Give each node a random value to test things out
+            windows[i].value = Random.Range(0f, 1f);
+            // Random.seed++;
+            // Check if types are of vsNode
+            if (windows[i].GetType() == typeof(vsNode))
+            {
+                // Cast and call update method
+                vsNode temp = (vsNode)windows[i];
+                temp.UpdateValue();
+            }
+        }
+    }
 
     void OnGUI()
     {
         // If windowsToAttach is full, add to connected nodes and reset.
-        if (windowsToAttach.Count >=2)
+        if (windowsToAttach.Count >= 2)
         {
             // Check if nodes are already connected first!!!
 
@@ -129,46 +194,37 @@ public class NodeEditor : EditorWindow
             windows[i].rectangle = GUI.Window(i, windows[i].rectangle, DrawNodeWindow, windows[i].nodeName);
         }
 
-        // Draw connected between connected nodes.
-        if (attachedWindows.Count >= 2)
-        {
+        
             for (int i = 0; i < attachedWindows.Count; i += 2)
             {
-                DrawNodeCurve(windows[attachedWindows[i]].rectangle, windows[attachedWindows[i + 1]].rectangle);              
+                DrawNodeCurve(windows[attachedWindows[i]].rectangle, windows[attachedWindows[i + 1]].rectangle);
             }
-        }
 
 
-        // Draw right click menu and populate list. Also check for right click event.
-        Event currentEvent = Event.current;
-        if (currentEvent.type == EventType.ContextClick)
-        {
-            Vector2 mousePos = currentEvent.mousePosition;
-            // Now create the menu, add items and show it
-            GenericMenu menu = new GenericMenu();
-            menu.AddItem(new GUIContent("VisualNodes/"), false, Callback, "V");
-            menu.AddSeparator("");
-            menu.AddItem(new GUIContent("Operators/"), false, Callback, "O");
-            menu.AddSeparator("");
-            menu.AddItem(new GUIContent("AudioNodes/Scale"), false, Callback, "Scale");
-            menu.AddItem(new GUIContent("AudioNodes/Pitch"), false, Callback, "Pitch");
-            menu.AddItem(new GUIContent("AudioNodes/Volume"), false, Callback, "Volume");
-            menu.ShowAsContext();
-            currentEvent.Use();
-        }
 
-        EndWindows();
+            // Draw right click menu and populate list. Also check for right click event.
+            Event currentEvent = Event.current;
+            if (currentEvent.type == EventType.ContextClick)
+            {
+                Vector2 mousePos = currentEvent.mousePosition;
+                // Now create the menu, add items and show it
+                GenericMenu menu = new GenericMenu();
+                menu.AddItem(new GUIContent("VisualNodes/"), false, Callback, "V");
+                menu.AddItem(new GUIContent("VisualNodes/yPosition"), false, Callback, "yPosition");
+                menu.AddItem(new GUIContent("VisualNodes/xRotation"),false, Callback, "xRotation");
+                menu.AddItem(new GUIContent("VisualNodes/yScale"), false, Callback, "yScale");
+                menu.AddSeparator("");
+                menu.AddItem(new GUIContent("Operators/"), false, Callback, "O");
+                menu.AddSeparator("");
+                menu.AddItem(new GUIContent("AudioNodes/Amplitude"), false, Callback, "Amplitude");
+                menu.AddItem(new GUIContent("AudioNodes/Pitch"), false, Callback, "Pitch");
+                menu.AddItem(new GUIContent("AudioNodes/Volume"), false, Callback, "Volume");
+               
+                menu.ShowAsContext();
+                currentEvent.Use();
+            }
+            EndWindows();
     }
-
-
-    //void Update()
-    //{
-    //    if (EditorApplication.isPlaying && !EditorApplication.isPaused)
-    //    {
-        
-    //    }
-    //}
-
 
     // Draws the node window.
     void DrawNodeWindow(int id)
@@ -176,11 +232,19 @@ public class NodeEditor : EditorWindow
         if (GUILayout.Button("Attach"))
         {
             if (windowsToAttach.Count < 2)
-            {
-                windowsToAttach.Add(id); 
+            { 
+                // Avoid duplicates
+                if (windowsToAttach.Contains(id))
+                {
+                    // Do nothing
+                }
+                else
+                {
+                    windowsToAttach.Add(id);
+                }
             }
         }
-        GUILayout.TextArea(windows[id].nodeName);
+        windows[id].nodeName = GUILayout.TextArea(" ");
         GUI.DragWindow();
     }
 
