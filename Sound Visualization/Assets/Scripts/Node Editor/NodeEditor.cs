@@ -71,17 +71,17 @@ public class AudioNode : Node
 
 public class vsNode : Node
 {
-    private GameObject visual;
-
+    public bool[] componentsChecked;
+    public Object visual;
+    public Component[] components;
     private NoiseRingController controller;
-
-    
+    public string gameObjectTag = "GameObject Tag";
 
     public vsNode(Rect r, string tag, string name)
     {
         rectangle = r;
         visual = GameObject.FindGameObjectWithTag(tag);
-        controller = visual.GetComponent<NoiseRingController>();
+        //controller = visual.GetComponent<NoiseRingController>();
         this.nodeName = name;
     }
 
@@ -99,7 +99,23 @@ public class vsNode : Node
                 controller.yScaleModulator = this.value;
                 break;
         }
-        controller.yPositionModulator = this.value;   
+        //controller.yPositionModulator = this.value;   
+    }
+
+    public void Test()
+    {
+        if (visual != null)
+        {
+            GameObject temp = (GameObject)visual;
+            //Debug.Log(temp.name);
+            //transform = temp.GetComponent<Transform>();
+            components = temp.GetComponents<Component>();
+            foreach (Component component in components)
+            {
+                Debug.Log(component.GetType());
+            }
+            //Debug.Log(transform);
+        }
     }
 
 }
@@ -146,7 +162,7 @@ public class NodeEditor : EditorWindow
                 windows.Add(new AudioNode(new Rect(mousePos.x, mousePos.y, 100, 100), "Pitch"));
                 break;
             case "yPosition":
-                windows.Add(new vsNode(new Rect(mousePos.x, mousePos.y, 100, 100), "NoiseRing", "yPosition"));
+                windows.Add(new vsNode(new Rect(mousePos.x, mousePos.y, 200, 300), "NoiseRing", "yPosition"));
                 break;
             case "xRotation":
                 windows.Add(new vsNode(new Rect(mousePos.x, mousePos.y, 100, 100), "NoiseRing", "xRotation"));
@@ -159,24 +175,12 @@ public class NodeEditor : EditorWindow
 
     void Update()
     {
-        // Make sure all visual nodes are updating their values
-        for (int i = 0; i < windows.Count; i++)
-        {
-            // Give each node a random value to test things out
-            windows[i].value = Random.Range(0f, 1f);
-            // Random.seed++;
-            // Check if types are of vsNode
-            if (windows[i].GetType() == typeof(vsNode))
-            {
-                // Cast and call update method
-                vsNode temp = (vsNode)windows[i];
-                temp.UpdateValue();
-            }
-        }
+        
     }
 
     void OnGUI()
     {
+
         // If windowsToAttach is full, add to connected nodes and reset.
         if (windowsToAttach.Count >= 2)
         {
@@ -195,35 +199,35 @@ public class NodeEditor : EditorWindow
         }
 
         
-            for (int i = 0; i < attachedWindows.Count; i += 2)
-            {
-                DrawNodeCurve(windows[attachedWindows[i]].rectangle, windows[attachedWindows[i + 1]].rectangle);
-            }
+        for (int i = 0; i < attachedWindows.Count; i += 2)
+        {
+            DrawNodeCurve(windows[attachedWindows[i]].rectangle, windows[attachedWindows[i + 1]].rectangle);
+        }
 
 
 
-            // Draw right click menu and populate list. Also check for right click event.
-            Event currentEvent = Event.current;
-            if (currentEvent.type == EventType.ContextClick)
-            {
-                Vector2 mousePos = currentEvent.mousePosition;
-                // Now create the menu, add items and show it
-                GenericMenu menu = new GenericMenu();
-                menu.AddItem(new GUIContent("VisualNodes/"), false, Callback, "V");
-                menu.AddItem(new GUIContent("VisualNodes/yPosition"), false, Callback, "yPosition");
-                menu.AddItem(new GUIContent("VisualNodes/xRotation"),false, Callback, "xRotation");
-                menu.AddItem(new GUIContent("VisualNodes/yScale"), false, Callback, "yScale");
-                menu.AddSeparator("");
-                menu.AddItem(new GUIContent("Operators/"), false, Callback, "O");
-                menu.AddSeparator("");
-                menu.AddItem(new GUIContent("AudioNodes/Amplitude"), false, Callback, "Amplitude");
-                menu.AddItem(new GUIContent("AudioNodes/Pitch"), false, Callback, "Pitch");
-                menu.AddItem(new GUIContent("AudioNodes/Volume"), false, Callback, "Volume");
-               
-                menu.ShowAsContext();
-                currentEvent.Use();
-            }
-            EndWindows();
+        // Draw right click menu and populate list. Also check for right click event.
+        Event currentEvent = Event.current;
+        if (currentEvent.type == EventType.ContextClick)
+        {
+            Vector2 mousePos = currentEvent.mousePosition;
+            // Now create the menu, add items and show it
+            GenericMenu menu = new GenericMenu();
+            menu.AddItem(new GUIContent("VisualNodes/"), false, Callback, "V");
+            menu.AddItem(new GUIContent("VisualNodes/yPosition"), false, Callback, "yPosition");
+            menu.AddItem(new GUIContent("VisualNodes/xRotation"),false, Callback, "xRotation");
+            menu.AddItem(new GUIContent("VisualNodes/yScale"), false, Callback, "yScale");
+            menu.AddSeparator("");
+            menu.AddItem(new GUIContent("Operators/"), false, Callback, "O");
+            menu.AddSeparator("");
+            menu.AddItem(new GUIContent("AudioNodes/Amplitude"), false, Callback, "Amplitude");
+            menu.AddItem(new GUIContent("AudioNodes/Pitch"), false, Callback, "Pitch");
+            menu.AddItem(new GUIContent("AudioNodes/Volume"), false, Callback, "Volume");
+           
+            menu.ShowAsContext();
+            currentEvent.Use();
+        }
+        EndWindows();
     }
 
     // Draws the node window.
@@ -245,6 +249,36 @@ public class NodeEditor : EditorWindow
             }
         }
         windows[id].nodeName = GUILayout.TextArea(" ");
+
+
+        // Check if types are of vsNode
+        if (windows[id].GetType() == typeof(vsNode))
+        {
+            // Cast and add TextArea
+            vsNode temp = (vsNode)windows[id];
+            //temp.gameObjectTag = GUILayout.TextArea(temp.gameObjectTag);
+            temp.visual = EditorGUILayout.ObjectField(temp.visual, typeof(Object), true);
+            temp.Test();
+
+            if (temp.visual != null)
+            {
+                int i = 0;
+                foreach (Component component in temp.components)
+                {
+                    //Debug.Log(component.GetType());
+                    //GUILayout.TextArea(component.GetType().ToString());
+                    temp.componentsChecked[i] = EditorGUILayout.Toggle(component.GetType().ToString(), temp.componentsChecked[i]);
+                    //if (temp.componentChecked)
+                    //    GUILayout.TextArea(component.GetType().ToString());
+                    i++;
+                }
+                //temp.FindGameObject();
+            }
+        }
+
+
+        //stringToEdit = GUILayout.TextArea(stringToEdit);
+
         GUI.DragWindow();
     }
 
