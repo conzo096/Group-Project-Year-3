@@ -1,12 +1,13 @@
 ﻿using UnityEngine;
 using UnityEditor;
 using System.Collections.Generic;
+using System.Reflection;
 
 /* TODO LIST.
  * Visual, Audio and operator nodes.
  * Apply osc manager onto this script.
  * Create phyiscal connections between nodes.
- */ 
+ */
 
 
 
@@ -18,7 +19,7 @@ public abstract class Node
     // what type of node is this, scale, pitch, plus operator etc.
     public string nodeName;
     // Value that is being passed through system.
-    public float value;
+    public object value;
     // Constructors. FIX CHAINING
     public Node()
     {
@@ -108,39 +109,89 @@ public class MaxNode: Node
 }
 
 
-public class vsNode : Node
+public class ControllerNode : Node
 {
-    private GameObject visual;
+    //public List<bool> componentsChecked = new List<bool>();
+    public Object visual;
+    public Dictionary<Component, bool> componentsDictionary = new Dictionary<Component, bool>();//public Component[] components;
+    //private NoiseRingController controller;
+    public string gameObjectTag = "GameObject Tag";
 
-    private NoiseRingController controller;
-
-    
-
-    public vsNode(Rect r, string tag, string name)
+    public ControllerNode(Rect r, string name)
     {
         rectangle = r;
-        visual = GameObject.FindGameObjectWithTag(tag);
-        controller = visual.GetComponent<NoiseRingController>();
+        //visual = GameObject.FindGameObjectWithTag(tag);
+        //controller = visual.GetComponent<NoiseRingController>();
         this.nodeName = name;
     }
 
-    public void UpdateValue()
+    public void Test()
     {
-        switch (this.nodeName)
-        { 
-            case "yPosition":
-                controller.yPositionModulator = this.value;
-                break;
-            case "xRotation":
-                controller.xRotationModulator = this.value;
-                break;
-            case "yScale":
-                controller.yScaleModulator = this.value;
-                break;
+        if (visual != null)
+        {
+            GameObject temp = (GameObject)visual;
+            //Debug.Log(temp.name);
+            //transform = temp.GetComponent<Transform>();
+            Component[] tempComponents = temp.GetComponents<Component>();
+            foreach (Component component in tempComponents)
+            {
+                if (!(componentsDictionary.ContainsKey(component)))
+                {
+                    componentsDictionary.Add(component, false);//Debug.Log(component.GetType());
+
+                }
+            }
+            //Debug.Log(componentsDictionary);
         }
-        controller.yPositionModulator = this.value;   
     }
 
+}
+
+public class VisualNode : Node
+{
+    public VisualNode(Rect r, string name, object value)
+    {
+        rectangle = r;
+        this.nodeName = name;
+        this.value = value;
+    }
+
+    public void UpdateVisual(Dictionary<PropertyInfo, Component> propertyInfoDictionary)
+    {
+        this.value = new Vector3(Random.Range(0f, 1f), Random.Range(0f, 1f), Random.Range(0f, 1f));
+        List<PropertyInfo> propertyInfo = new List<PropertyInfo>(propertyInfoDictionary.Keys);
+        for (int i = 0; i < propertyInfo.Count; i++)
+        {
+            if (propertyInfo[i].Name == this.nodeName)
+            {
+                Component comp;
+                propertyInfoDictionary.TryGetValue(propertyInfo[i], out comp);
+                System.Object compObj = (System.Object)comp;
+
+                // Set the value
+                propertyInfo[i].SetValue(compObj, this.value, null);
+            }
+        }
+    }
+
+    public void UpdateVisual(Dictionary<FieldInfo, Component> fieldInfoDictionary)
+    {
+        this.value = Random.Range(0f, 1f);
+        List<FieldInfo> fieldInfo = new List<FieldInfo>(fieldInfoDictionary.Keys);
+
+        for (int i = 0; i < fieldInfo.Count; i++)
+        {
+            if (fieldInfo[i].Name == this.nodeName)
+            {
+                Component comp;
+                fieldInfoDictionary.TryGetValue(fieldInfo[i], out comp);
+                System.Object compObj = (System.Object)comp;
+
+                // Set the value
+                fieldInfo[i].SetValue(compObj, this.value);
+            }
+        }
+    }
 }
 
 public class NodeEditor : EditorWindow
@@ -152,6 +203,11 @@ public class NodeEditor : EditorWindow
     //public Transform controller;
     private Osc handler;
 
+    // List of properties from components
+    Dictionary<PropertyInfo, Component> propertyInfo = new Dictionary<PropertyInfo, Component>();
+
+    // List of members from components
+    Dictionary<FieldInfo, Component> fieldInfo = new Dictionary<FieldInfo, Component>();
 
     // List of rectangle nodes.
     List<Node> windows = new List<Node>();
@@ -203,37 +259,56 @@ public class NodeEditor : EditorWindow
             case "GenericAudio":
                 windows.Add(new AudioNode(new Rect(mousePos.x,mousePos.y,100,100), "Insert Parameter"));
                 break;
-            case "yPosition":
-                windows.Add(new vsNode(new Rect(mousePos.x, mousePos.y, 100, 100), "NoiseRing", "yPosition"));
-                break;
-            case "xRotation":
-                windows.Add(new vsNode(new Rect(mousePos.x, mousePos.y, 100, 100), "NoiseRing", "xRotation"));
-                break;
-            case "yScale":
-                windows.Add(new vsNode(new Rect(mousePos.x, mousePos.y, 100, 100), "NoiseRing", "yScale"));
-                break;
             case "MaxNode":
                 windows.Add(new MaxNode(new Rect(mousePos.x, mousePos.y, 100, 100), "MaxNode"));
+                break;
+            case "ControllerNode":
+                windows.Add(new ControllerNode(new Rect(mousePos.x, mousePos.y, 200, 400), "ControllerNode"));
+                break;
+            default:
+                // Do this for all of components other than scripts
+                List<PropertyInfo> pi = new List<PropertyInfo>(propertyInfo.Keys);
+                foreach (PropertyInfo currentPi in pi)
+                {
+                    if (currentPi.Name == nodeRequested)
+                    {
+                        Component comp;
+                        propertyInfo.TryGetValue(currentPi, out comp);
+                        System.Object compObj = (System.Object)comp;
+                        windows.Add(new VisualNode(new Rect(mousePos.x, mousePos.y, 100, 100), nodeRequested, currentPi.GetValue(compObj, null)));
+                    }
+                }
+                // Do this for script components
+                List<FieldInfo> fi = new List<FieldInfo>(fieldInfo.Keys);
+                foreach (FieldInfo currentFi in fi)
+                {
+                    if (currentFi.Name == nodeRequested)
+                    {
+                        Component comp;
+                        fieldInfo.TryGetValue(currentFi, out comp);
+                        System.Object compObj = (System.Object)comp;
+                        windows.Add(new VisualNode(new Rect(mousePos.x, mousePos.y, 100, 100), nodeRequested, currentFi.GetValue(compObj)));
+                    }
+                }
                 break;
         }
     }
 
     void Update()
     {
-        // Make sure all visual nodes are updating their values
+        // For each window
         for (int i = 0; i < windows.Count; i++)
         {
-            // Give each node a random value to test things out
-            windows[i].value = Random.Range(0f, 1f);
-            // Random.seed++;
-            // Check if types are of vsNode
-            if (windows[i].GetType() == typeof(vsNode))
+            // Update visual nodes
+            if (windows[i].GetType() == typeof(VisualNode))
             {
-                // Cast and call update method
-                vsNode temp = (vsNode)windows[i];
-                temp.UpdateValue();
+                // Cast and Update
+                VisualNode temp = (VisualNode)windows[i];
+                //temp.UpdateVisual(propertyInfo);
+                temp.UpdateVisual(fieldInfo);
             }
         }
+
     }
 
     void OnGUI()
@@ -258,7 +333,7 @@ public class NodeEditor : EditorWindow
                 windows[i].rectangle = GUI.Window(i, windows[i].rectangle, DrawNodeWindow, displayName);
 
             }
-            if (windows[i] is MaxNode)
+            else if (windows[i] is MaxNode)
             {
                 windows[i].rectangle = GUI.Window(i, windows[i].rectangle, DrawMaxNodeWindow, windows[i].nodeName);
 
@@ -279,10 +354,9 @@ public class NodeEditor : EditorWindow
             Vector2 mousePos = currentEvent.mousePosition;
             // Now create the menu, add items and show it
             GenericMenu menu = new GenericMenu();
+            menu.AddItem(new GUIContent("ControllerNode"), false, Callback, "ControllerNode");
+            menu.AddSeparator("");
             menu.AddItem(new GUIContent("VisualNodes/"), false, Callback, "V");
-            menu.AddItem(new GUIContent("VisualNodes/yPosition"), false, Callback, "yPosition");
-            menu.AddItem(new GUIContent("VisualNodes/xRotation"),false, Callback, "xRotation");
-            menu.AddItem(new GUIContent("VisualNodes/yScale"), false, Callback, "yScale");
             menu.AddSeparator("");
             menu.AddItem(new GUIContent("Operators/"), false, Callback, "O");
             menu.AddSeparator("");
@@ -292,6 +366,22 @@ public class NodeEditor : EditorWindow
             menu.AddItem(new GUIContent("AudioNodes/GenericAudio"), false, Callback, "GenericAudio");
             menu.AddSeparator("");
             menu.AddItem(new GUIContent("MaxMSP/MaxMSP"), false, Callback, "MaxNode");
+
+            List<PropertyInfo> pi = new List<PropertyInfo>(propertyInfo.Keys);
+
+            //for (int i = 0; i < propertyInfo.Count; i++)
+            foreach (PropertyInfo currentPi in pi)
+            {
+                menu.AddItem(new GUIContent("VisualNodes/" + currentPi.Name), false, Callback, currentPi.Name);
+            }
+
+            List<FieldInfo> fi = new List<FieldInfo>(fieldInfo.Keys);
+
+            //for (int i = 0; i < fieldInfo.Count; i++)
+            foreach (FieldInfo currentFi in fi)
+            {
+                menu.AddItem(new GUIContent("VisualNodes/" + currentFi.Name), false, Callback, currentFi.Name);
+            }
             menu.ShowAsContext();
             currentEvent.Use();
         }
@@ -327,23 +417,102 @@ public class NodeEditor : EditorWindow
     // Draws the node window.
     void DrawNodeWindow(int id)
     {
-        if (GUILayout.Button("Attach"))
+        // Controller node cannot attach to anything
+        if (windows[id].GetType() != typeof(ControllerNode))
         {
-            if (windowsToAttach.Count < 2)
-            { 
-                // Avoid duplicates
-                if (windowsToAttach.Contains(id))
+            if (GUILayout.Button("Attach"))
+            {
+                if (windowsToAttach.Count < 2)
                 {
-                    // Do nothing
+                    // Avoid duplicates
+                    if (windowsToAttach.Contains(id))
+                    {
+                        // Do nothing
+                    }
+                    else
+                    {
+                        windowsToAttach.Add(id);
+                    }
                 }
-                else
+            }
+        windows[id].nodeName = GUILayout.TextArea(windows[id].nodeName);
+        //MaxNode temp = (MaxNode)windows[id];
+      
+        }
+
+        // If controller node
+        if (windows[id].GetType() == typeof(ControllerNode))
+        {
+            // Cast and add TextArea
+            ControllerNode temp = (ControllerNode)windows[id];
+            //temp.gameObjectTag = GUILayout.TextArea(temp.gameObjectTag);
+            temp.visual = EditorGUILayout.ObjectField(temp.visual, typeof(Object), true);
+            temp.Test();
+
+            if (temp.visual != null)
+            {
+                List<Component> keys = new List<Component>(temp.componentsDictionary.Keys);
+                foreach (Component component in keys)
                 {
-                    windowsToAttach.Add(id);
+                    // Get value from check box
+                    bool value = false;
+                    temp.componentsDictionary.TryGetValue(component, out value);
+                    value = GUILayout.Toggle(value, component.GetType().ToString());
+
+                    // Replace value in dictionary at specified key
+                    temp.componentsDictionary[component] = value;
+
+                    if (value)
+                    {
+                        // For most components
+                        foreach (PropertyInfo pi in component.GetType().GetProperties())
+                        {
+
+                            System.Object obj = (System.Object)component;
+                            //Debug.Log("fi name " + fi.Name + " val " + fi.GetValue(obj));
+                            if (pi.PropertyType == typeof(Vector3) || pi.PropertyType == typeof(float))
+                            {
+                                // Add each property to list of properties
+                                if (!(propertyInfo.ContainsKey(pi)))
+                                    propertyInfo.Add(pi, component);
+                                //GUILayout.BeginHorizontal("inner");
+                                GUILayout.Toggle(value, pi.Name);
+                                // set name of text area
+                                //GUI.SetNextControlName(pi.Name);
+                                GUILayout.TextField(pi.GetValue(obj, null).ToString());
+
+                                //GUILayout.EndHorizontal();
+                            }
+                        }
+
+                        // For scripts
+                        foreach (FieldInfo fi in component.GetType().GetFields())
+                        {
+                            if (fi.FieldType == typeof(Vector3) || fi.FieldType == typeof(float))
+                            {
+                                System.Object obj = (System.Object)component;
+
+                                // Add each field to list of fields
+                                if (!(fieldInfo.ContainsKey(fi)))
+                                    fieldInfo.Add(fi, component);
+
+                                GUILayout.Toggle(value, fi.Name);
+                                GUILayout.TextField(fi.GetValue(obj).ToString());
+                            }
+                        }
+
+                    }
                 }
             }
         }
-        windows[id].nodeName = GUILayout.TextArea(windows[id].nodeName);
-       // windows[id].nodeName = EditorGUI.TextArea(windows[id].rectangle,"hi");
+        else if (windows[id].GetType() == typeof(VisualNode))
+        {
+            // Cast and add TextField for value
+            VisualNode temp = (VisualNode)windows[id];
+            //temp.UpdateVisual(propertyInfo);
+            GUILayout.TextField(temp.value.ToString());
+        }
+
         GUI.DragWindow();
     }
 
