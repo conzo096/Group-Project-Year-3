@@ -69,6 +69,45 @@ public class AudioNode : Node
     }
 }
 
+public class MaxNode: Node
+{
+    // Port to listen on
+    public int inPort = 8050;
+    // Ip audio is coming from?
+    public string incomingIp;
+    // Sending to port? - not used by us.
+    public int outPort = 9000;
+    // Listens for messages - need a seperate one per node
+    public Osc handler;
+    // Value from maxMSP
+    public float maxValue;
+
+    public MaxNode()
+    {
+        UDPPacketIO udp = new UDPPacketIO();
+        // Init the user datagram protocal.
+        // Can change the listen port for each different input?
+        udp.init(incomingIp, outPort, inPort);
+        handler = new Osc();
+        handler.init(udp);
+        handler.SetAllMessageHandler(AllMessageHandler);
+    }
+    public MaxNode(Rect rec, string name) : this()
+    {
+        rectangle = rec;
+        nodeName = name;
+
+    }
+    // msgAddress is a poor variable name. It is actually what musical parameter (e.g. pitch, frequency etc)
+    public void AllMessageHandler(OscMessage oscMessage)
+    {
+        Debug.Log(oscMessage.Address);
+        maxValue = (float)oscMessage.Values[0];
+
+    }
+}
+
+
 public class vsNode : Node
 {
     private GameObject visual;
@@ -106,6 +145,14 @@ public class vsNode : Node
 
 public class NodeEditor : EditorWindow
 {
+    //OSC variables
+    public string RemoteIP = /*"146.176.164.4";*/ "127.0f.0.1f"; // signifies a local host (if testing locally
+    public int SendToPort = 9000; //the port you will be sending from
+    public int ListenerPort = 8050; //the port you will be listening on
+    //public Transform controller;
+    private Osc handler;
+
+
     // List of rectangle nodes.
     List<Node> windows = new List<Node>();
 
@@ -114,16 +161,24 @@ public class NodeEditor : EditorWindow
 
     // IDS of connected nodes.
     List<int> attachedWindows = new List<int>();
-    int newID = 0;
-    int tempCount = 0;
   
     [MenuItem("Window/Node Editor")]
-    static void ShowEditor()
+    static void Init()
     {
-        NodeEditor editor = GetWindow<NodeEditor>();
+        NodeEditor window = (NodeEditor)GetWindow(typeof(NodeEditor));
+        Debug.Log("HERE");
+        UDPPacketIO udp = new UDPPacketIO();
+        // Init the user datagram protocal.
+        // Can change the listen port for each different input?
+        udp.init(window.RemoteIP, window.SendToPort, window.ListenerPort);
+        window.handler = new Osc();
+        window.handler.init(udp);
+        window.handler.SetAllMessageHandler(window.AllMessageHandler);
+        window.Show();
+
     }
 
-   // called when an right-click option is selected.
+    // called when an right-click option is selected.
     void Callback(object obj)
     {
         //Event currentEvent = Event.current;
@@ -145,6 +200,9 @@ public class NodeEditor : EditorWindow
             case "Pitch":
                 windows.Add(new AudioNode(new Rect(mousePos.x, mousePos.y, 100, 100), "Pitch"));
                 break;
+            case "GenericAudio":
+                windows.Add(new AudioNode(new Rect(mousePos.x,mousePos.y,100,100), "Insert Parameter"));
+                break;
             case "yPosition":
                 windows.Add(new vsNode(new Rect(mousePos.x, mousePos.y, 100, 100), "NoiseRing", "yPosition"));
                 break;
@@ -153,6 +211,9 @@ public class NodeEditor : EditorWindow
                 break;
             case "yScale":
                 windows.Add(new vsNode(new Rect(mousePos.x, mousePos.y, 100, 100), "NoiseRing", "yScale"));
+                break;
+            case "MaxNode":
+                windows.Add(new MaxNode(new Rect(mousePos.x, mousePos.y, 100, 100), "MaxNode"));
                 break;
         }
     }
@@ -191,40 +252,77 @@ public class NodeEditor : EditorWindow
         // For each window, draw window.
         for (int i = 0; i < windows.Count; i++)
         {
-            windows[i].rectangle = GUI.Window(i, windows[i].rectangle, DrawNodeWindow, windows[i].nodeName);
+            if (windows[i] is AudioNode)
+            {
+                string displayName = windows[i].nodeName + " (Audio)";
+                windows[i].rectangle = GUI.Window(i, windows[i].rectangle, DrawNodeWindow, displayName);
+
+            }
+            if (windows[i] is MaxNode)
+            {
+                windows[i].rectangle = GUI.Window(i, windows[i].rectangle, DrawMaxNodeWindow, windows[i].nodeName);
+
+            }
+            else
+                windows[i].rectangle = GUI.Window(i, windows[i].rectangle, DrawNodeWindow, windows[i].nodeName);
+        }
+      
+        for (int i = 0; i < attachedWindows.Count; i += 2)
+        {
+            DrawNodeCurve(windows[attachedWindows[i]].rectangle, windows[attachedWindows[i + 1]].rectangle);
         }
 
-        
-            for (int i = 0; i < attachedWindows.Count; i += 2)
-            {
-                DrawNodeCurve(windows[attachedWindows[i]].rectangle, windows[attachedWindows[i + 1]].rectangle);
-            }
-
-
-
-            // Draw right click menu and populate list. Also check for right click event.
-            Event currentEvent = Event.current;
-            if (currentEvent.type == EventType.ContextClick)
-            {
-                Vector2 mousePos = currentEvent.mousePosition;
-                // Now create the menu, add items and show it
-                GenericMenu menu = new GenericMenu();
-                menu.AddItem(new GUIContent("VisualNodes/"), false, Callback, "V");
-                menu.AddItem(new GUIContent("VisualNodes/yPosition"), false, Callback, "yPosition");
-                menu.AddItem(new GUIContent("VisualNodes/xRotation"),false, Callback, "xRotation");
-                menu.AddItem(new GUIContent("VisualNodes/yScale"), false, Callback, "yScale");
-                menu.AddSeparator("");
-                menu.AddItem(new GUIContent("Operators/"), false, Callback, "O");
-                menu.AddSeparator("");
-                menu.AddItem(new GUIContent("AudioNodes/Amplitude"), false, Callback, "Amplitude");
-                menu.AddItem(new GUIContent("AudioNodes/Pitch"), false, Callback, "Pitch");
-                menu.AddItem(new GUIContent("AudioNodes/Volume"), false, Callback, "Volume");
-               
-                menu.ShowAsContext();
-                currentEvent.Use();
-            }
-            EndWindows();
+        // Draw right click menu and populate list. Also check for right click event.
+        Event currentEvent = Event.current;
+        if (currentEvent.type == EventType.ContextClick)
+        {
+            Vector2 mousePos = currentEvent.mousePosition;
+            // Now create the menu, add items and show it
+            GenericMenu menu = new GenericMenu();
+            menu.AddItem(new GUIContent("VisualNodes/"), false, Callback, "V");
+            menu.AddItem(new GUIContent("VisualNodes/yPosition"), false, Callback, "yPosition");
+            menu.AddItem(new GUIContent("VisualNodes/xRotation"),false, Callback, "xRotation");
+            menu.AddItem(new GUIContent("VisualNodes/yScale"), false, Callback, "yScale");
+            menu.AddSeparator("");
+            menu.AddItem(new GUIContent("Operators/"), false, Callback, "O");
+            menu.AddSeparator("");
+            menu.AddItem(new GUIContent("AudioNodes/Amplitude"), false, Callback, "Amplitude");
+            menu.AddItem(new GUIContent("AudioNodes/Pitch"), false, Callback, "Pitch");
+            menu.AddItem(new GUIContent("AudioNodes/Volume"), false, Callback, "Volume");
+            menu.AddItem(new GUIContent("AudioNodes/GenericAudio"), false, Callback, "GenericAudio");
+            menu.AddSeparator("");
+            menu.AddItem(new GUIContent("MaxMSP/MaxMSP"), false, Callback, "MaxNode");
+            menu.ShowAsContext();
+            currentEvent.Use();
+        }
+        EndWindows();
     }
+
+
+    void DrawMaxNodeWindow(int id)
+    {
+        if (GUILayout.Button("Attach"))
+        {
+            if (windowsToAttach.Count < 2)
+            {
+                // Avoid duplicates
+                if (windowsToAttach.Contains(id))
+                {
+                    // Do nothing
+                }
+                else
+                {
+                    windowsToAttach.Add(id);
+                }
+            }
+        }
+        windows[id].nodeName = GUILayout.TextArea(windows[id].nodeName);
+        MaxNode temp = (MaxNode)windows[id];
+        windows[id].nodeName = GUILayout.TextArea(temp.inPort.ToString());
+        // windows[id].nodeName = EditorGUI.TextArea(windows[id].rectangle,"hi");
+        GUI.DragWindow();
+    }
+
 
     // Draws the node window.
     void DrawNodeWindow(int id)
@@ -244,7 +342,8 @@ public class NodeEditor : EditorWindow
                 }
             }
         }
-        windows[id].nodeName = GUILayout.TextArea(" ");
+        windows[id].nodeName = GUILayout.TextArea(windows[id].nodeName);
+       // windows[id].nodeName = EditorGUI.TextArea(windows[id].rectangle,"hi");
         GUI.DragWindow();
     }
 
@@ -265,4 +364,14 @@ public class NodeEditor : EditorWindow
 
         Handles.DrawBezier(startPos, endPos, startTan, endTan, Color.black, null, 1);
     }
+
+
+    // msgAddress is a poor variable name. It is actually what musical parameter (e.g. pitch, frequency etc)
+    public void AllMessageHandler(OscMessage oscMessage)
+    {
+
+        Debug.Log("Still working on this...");
+    }
 }
+
+

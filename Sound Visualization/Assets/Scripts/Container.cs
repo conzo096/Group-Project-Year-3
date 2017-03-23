@@ -38,8 +38,8 @@ public static class NormalSolver
             int vertexIndexB = triangles[i + 1];
             int vertexIndexC = triangles[i + 2];
 
-            Vector3 p1 = vertices[vertexIndexB] - vertices[vertexIndexA];
-            Vector3 p2 = vertices[vertexIndexC] - vertices[vertexIndexA];
+           // Vector3 p1 = vertices[vertexIndexB] - vertices[vertexIndexA];
+            //Vector3 p2 = vertices[vertexIndexC] - vertices[vertexIndexA];
 
             //Calculate the normal of the triangle
             Vector3 normal = SurfaceNormalFromIndices(vertexIndexA, vertexIndexB, vertexIndexC, vertices);
