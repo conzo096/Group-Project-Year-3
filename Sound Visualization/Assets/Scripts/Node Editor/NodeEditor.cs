@@ -66,7 +66,9 @@ public class AudioNode : Node
     // Update value from osc message.
     public override void UpdateValues()
     {
-        value = 5;
+        //value = 5;
+        // Temporarily create a random num (for testing purposes)
+        value = Random.Range(0f, 1f);
     }
 }
 
@@ -137,11 +139,10 @@ public class ControllerNode : Node
             {
                 if (!(componentsDictionary.ContainsKey(component)))
                 {
-                    componentsDictionary.Add(component, false);//Debug.Log(component.GetType());
+                    componentsDictionary.Add(component, false);
 
                 }
             }
-            //Debug.Log(componentsDictionary);
         }
     }
 
@@ -156,9 +157,11 @@ public class VisualNode : Node
         this.value = value;
     }
 
+    // Updates the variables of a component
     public void UpdateVisual(Dictionary<PropertyInfo, Component> propertyInfoDictionary)
     {
-        this.value = new Vector3(Random.Range(0f, 1f), Random.Range(0f, 1f), Random.Range(0f, 1f));
+        // Temp value
+        //this.value = Random.Range(0f, 1f);//new Vector3(Random.Range(0f, 1f), Random.Range(0f, 1f), Random.Range(0f, 1f));
         List<PropertyInfo> propertyInfo = new List<PropertyInfo>(propertyInfoDictionary.Keys);
         for (int i = 0; i < propertyInfo.Count; i++)
         {
@@ -168,27 +171,70 @@ public class VisualNode : Node
                 propertyInfoDictionary.TryGetValue(propertyInfo[i], out comp);
                 System.Object compObj = (System.Object)comp;
 
-                // Set the value
-                propertyInfo[i].SetValue(compObj, this.value, null);
+                // Update as vector
+                if (propertyInfo[i].PropertyType == typeof(Vector3))
+                {
+                    // Cast
+                    Vector3 vector3Value = new Vector3((float)this.value, (float)this.value, (float)this.value);
+                    // Set the value
+                    propertyInfo[i].SetValue(compObj, vector3Value, null);
+                }
+                // Update as int
+                else if (propertyInfo[i].PropertyType == typeof(int))
+                {
+                    // Cast
+                    int intValue = (int)this.value;
+                    // Set the value
+                    propertyInfo[i].SetValue(compObj, intValue, null);
+                }
+                // Default
+                else
+                {
+                    propertyInfo[i].SetValue(compObj, this.value, null);
+                }
             }
         }
     }
 
+    // Updates the variables of a script
     public void UpdateVisual(Dictionary<FieldInfo, Component> fieldInfoDictionary)
     {
-        this.value = Random.Range(0f, 1f);
+        // Temp value
+        //this.value = Random.Range(0f, 1f);
+
         List<FieldInfo> fieldInfo = new List<FieldInfo>(fieldInfoDictionary.Keys);
 
+        // Loop through all the variables of the script
         for (int i = 0; i < fieldInfo.Count; i++)
         {
+            // If the variable is related to this node
             if (fieldInfo[i].Name == this.nodeName)
             {
                 Component comp;
                 fieldInfoDictionary.TryGetValue(fieldInfo[i], out comp);
                 System.Object compObj = (System.Object)comp;
 
-                // Set the value
-                fieldInfo[i].SetValue(compObj, this.value);
+                // Update as vector
+                if (fieldInfo[i].FieldType == typeof(Vector3))
+                {
+                    // Cast
+                    Vector3 vector3Value = new Vector3((float)this.value, (float)this.value, (float)this.value);
+                    // Set the value
+                    fieldInfo[i].SetValue(compObj, vector3Value);
+                }
+                // Update as int
+                else if (fieldInfo[i].FieldType == typeof(int))
+                {
+                    // Cast
+                    int intValue = (int)this.value;
+                    // Set the value
+                    fieldInfo[i].SetValue(compObj, intValue);
+                }
+                // Default
+                else
+                {
+                    fieldInfo[i].SetValue(compObj, this.value);
+                }
             }
         }
     }
@@ -222,7 +268,7 @@ public class NodeEditor : EditorWindow
     static void Init()
     {
         NodeEditor window = (NodeEditor)GetWindow(typeof(NodeEditor));
-        Debug.Log("HERE");
+        //Debug.Log("HERE");
         UDPPacketIO udp = new UDPPacketIO();
         // Init the user datagram protocal.
         // Can change the listen port for each different input?
@@ -234,7 +280,7 @@ public class NodeEditor : EditorWindow
 
     }
 
-    // called when an right-click option is selected.
+    // called when a right-click option is selected.
     void Callback(object obj)
     {
         //Event currentEvent = Event.current;
@@ -300,14 +346,24 @@ public class NodeEditor : EditorWindow
         for (int i = 0; i < windows.Count; i++)
         {
             // Update visual nodes
-            if (windows[i].GetType() == typeof(VisualNode))
+            if (windows[i] is VisualNode)
             {
                 // Cast and Update
                 VisualNode temp = (VisualNode)windows[i];
-                //temp.UpdateVisual(propertyInfo);
+                // Update variables for components
+                temp.UpdateVisual(propertyInfo);
+                // Update variables for scripts
                 temp.UpdateVisual(fieldInfo);
             }
+
+            // Update audio nodes
+            if (windows[i] is AudioNode)
+            {
+                AudioNode temp = (AudioNode)windows[i];
+                temp.UpdateValues();
+            }
         }
+
 
     }
 
@@ -341,10 +397,15 @@ public class NodeEditor : EditorWindow
             else
                 windows[i].rectangle = GUI.Window(i, windows[i].rectangle, DrawNodeWindow, windows[i].nodeName);
         }
-      
+        
+        // Connection
         for (int i = 0; i < attachedWindows.Count; i += 2)
         {
+            // Draw the connection
             DrawNodeCurve(windows[attachedWindows[i]].rectangle, windows[attachedWindows[i + 1]].rectangle);
+
+            // Pass along the value for the connection, from left to right
+            windows[attachedWindows[i + 1]].value = windows[attachedWindows[i]].value;
         }
 
         // Draw right click menu and populate list. Also check for right click event.
@@ -467,28 +528,27 @@ public class NodeEditor : EditorWindow
                         // For most components
                         foreach (PropertyInfo pi in component.GetType().GetProperties())
                         {
-
                             System.Object obj = (System.Object)component;
-                            //Debug.Log("fi name " + fi.Name + " val " + fi.GetValue(obj));
-                            if (pi.PropertyType == typeof(Vector3) || pi.PropertyType == typeof(float))
+                            // Only use objects of type Vector3, float, int.
+                            if (pi.PropertyType == typeof(Vector3) || pi.PropertyType == typeof(float) ||
+                                pi.PropertyType == typeof(int))
                             {
                                 // Add each property to list of properties
                                 if (!(propertyInfo.ContainsKey(pi)))
                                     propertyInfo.Add(pi, component);
-                                //GUILayout.BeginHorizontal("inner");
-                                GUILayout.Toggle(value, pi.Name);
-                                // set name of text area
-                                //GUI.SetNextControlName(pi.Name);
-                                GUILayout.TextField(pi.GetValue(obj, null).ToString());
 
-                                //GUILayout.EndHorizontal();
+                                // Set up GUI on controller
+                                GUILayout.Toggle(value, pi.Name);
+                                GUILayout.TextField(pi.GetValue(obj, null).ToString());
                             }
                         }
 
                         // For scripts
                         foreach (FieldInfo fi in component.GetType().GetFields())
                         {
-                            if (fi.FieldType == typeof(Vector3) || fi.FieldType == typeof(float))
+                            // Only use objects of type Vector3, float, int.
+                            if (fi.FieldType == typeof(Vector3) || fi.FieldType == typeof(float) ||
+                                fi.FieldType == typeof(int))
                             {
                                 System.Object obj = (System.Object)component;
 
@@ -496,11 +556,11 @@ public class NodeEditor : EditorWindow
                                 if (!(fieldInfo.ContainsKey(fi)))
                                     fieldInfo.Add(fi, component);
 
+                                // Set up GUI on controller
                                 GUILayout.Toggle(value, fi.Name);
                                 GUILayout.TextField(fi.GetValue(obj).ToString());
                             }
                         }
-
                     }
                 }
             }
