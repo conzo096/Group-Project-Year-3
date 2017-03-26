@@ -8,6 +8,7 @@ using System.Reflection;
  * Apply osc manager onto this script.
  * Delete nodes, delete connections.
  * For visual nodes: break up vectors into seperate x y and z
+ * Make sure when connecting nodes audio is on left side and visual on right side
  */
 
 
@@ -111,7 +112,7 @@ public class MaxNode: Node
     }
 }
 
-
+// Controller node, used to create visual nodes based on a given gameobject
 public class ControllerNode : Node
 {
     //public List<bool> componentsChecked = new List<bool>();
@@ -149,6 +150,7 @@ public class ControllerNode : Node
 
 }
 
+// Visual node, interacts with components of a gameobject provided by the controller node.
 public class VisualNode : Node
 {
     public VisualNode(Rect r, string name, object value)
@@ -248,8 +250,64 @@ public class VisualNode : Node
     }
 }
 
+public enum Operators
+{
+    Add = 0,
+    Subtract = 1,
+    Divide = 2,
+    Multiply = 3
+}
+
+// Operator node, receives a value, modifies it and outputs it to other nodes.
+public class OperatorNode : Node
+{
+
+    public float modifier;
+    public float output;
+    public Operators currentOperator;
+    public OperatorNode(Rect r, string name)
+    {
+        this.rectangle = r;
+        this.nodeName = name;
+    }
+    public void CalculateOutput()
+    {
+        if (this.value != null)
+        {
+            switch (currentOperator)
+            {
+                case Operators.Add:
+                    this.output = (float)this.value + this.modifier;
+                    break;
+                case Operators.Divide:
+                    if (modifier != 0)
+                        this.output = (float)this.value / this.modifier;
+                    break;
+                case Operators.Multiply:
+                    this.output = (float)this.value * this.modifier;
+                    break;
+                case Operators.Subtract:
+                    this.output = (float)this.value - this.modifier;
+                    break;
+                default:
+                    this.output = (float)this.value * this.modifier;
+                    break;
+
+            }
+            
+            //Debug.Log(this.output);
+        }
+    }
+
+    public void UpdateState(Operators currentOperator)
+    {
+        this.currentOperator = currentOperator;
+    }
+}
+
 public class NodeEditor : EditorWindow
 {
+    Operators display = Operators.Multiply;
     //OSC variables
     public string RemoteIP = /*"146.176.164.4";*/ "127.0f.0.1f"; // signifies a local host (if testing locally
     public int SendToPort = 9000; //the port you will be sending from
@@ -319,6 +377,9 @@ public class NodeEditor : EditorWindow
             case "ControllerNode":
                 windows.Add(new ControllerNode(new Rect(mousePos.x, mousePos.y, 200, 400), "ControllerNode"));
                 break;
+            case "Operator":
+                windows.Add(new OperatorNode(new Rect(mousePos.x, mousePos.y, 200, 200), "Operator"));
+                break;
             default:
                 // Do this for all of components other than scripts
                 List<PropertyInfo> pi = new List<PropertyInfo>(propertyInfo.Keys);
@@ -370,6 +431,14 @@ public class NodeEditor : EditorWindow
                 temp.UpdateVisual(propertyInfo);
                 // Update variables for scripts
                 temp.UpdateVisual(fieldInfo);
+            }
+
+            // Update operator nodes
+            if (windows[i] is OperatorNode)
+            {
+                // Cast and Update
+                OperatorNode temp = (OperatorNode)windows[i];
+                temp.CalculateOutput();
             }
         }
     }
@@ -432,8 +501,19 @@ public class NodeEditor : EditorWindow
             // Draw the connection
             DrawNodeCurve(windows[attachedWindows[i]].rectangle, windows[attachedWindows[i + 1]].rectangle);
 
-            // Pass along the value for the connection, from left to right
-            windows[attachedWindows[i + 1]].value = windows[attachedWindows[i]].value;
+            if (windows[attachedWindows[i]] is OperatorNode)
+            {
+                // Cast to operator node
+                OperatorNode temp = (OperatorNode)windows[attachedWindows[i]];
+                // Pass on output instead of value
+                windows[attachedWindows[i + 1]].value = temp.output;
+            }
+            else
+            {
+                // Pass along the value for the connection, from left to right
+                windows[attachedWindows[i + 1]].value = windows[attachedWindows[i]].value;
+            }
+
         }
 
         // Draw right click menu and populate list. Also check for right click event.
@@ -450,7 +530,7 @@ public class NodeEditor : EditorWindow
             menu.AddSeparator("");
             menu.AddItem(new GUIContent("VisualNodes/"), false, Callback, "V");
             menu.AddSeparator("");
-            menu.AddItem(new GUIContent("Operators/"), false, Callback, "O");
+            menu.AddItem(new GUIContent("Operator"), false, Callback, "Operator");
             menu.AddSeparator("");
             menu.AddItem(new GUIContent("AudioNodes/Amplitude"), false, Callback, "Amplitude");
             menu.AddItem(new GUIContent("AudioNodes/Pitch"), false, Callback, "Pitch");
@@ -568,7 +648,7 @@ public class NodeEditor : EditorWindow
                             if (pi.PropertyType == typeof(Vector3) || pi.PropertyType == typeof(float) ||
                                 pi.PropertyType == typeof(int))
                             {
-                                
+
                                 // Add each property to list of properties
                                 if (!(propertyInfo.ContainsKey(pi)))
                                     propertyInfo.Add(pi, component);
@@ -625,11 +705,27 @@ public class NodeEditor : EditorWindow
                 {
                     GUILayout.TextField(temp.value.ToString());
                 }
-                
-            }
-                
-        }
 
+            }
+
+        }
+        else if (windows[id].GetType() == typeof(OperatorNode))
+        {
+            OperatorNode temp = (OperatorNode)windows[id];
+
+            //float.TryParse(GUILayout.TextField(temp.modifier.ToString()), out temp.modifier);
+            temp.modifier = EditorGUI.FloatField(new Rect(windows[id].rectangle.width - 60, windows[id].rectangle.height - 25, 50, 20), temp.modifier);
+
+            //Transform selectedObj = Selection.activeTransform;
+
+            display = (Operators)EditorGUI.EnumPopup(
+                new Rect(0, 70, position.width, 15),
+                "Operator:",
+                display);
+
+            temp.UpdateState(display);
+
+        }
         GUI.DragWindow();
     }
 
