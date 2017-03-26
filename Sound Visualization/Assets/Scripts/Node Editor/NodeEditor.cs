@@ -4,9 +4,10 @@ using System.Collections.Generic;
 using System.Reflection;
 
 /* TODO LIST.
- * Visual, Audio and operator nodes.
+ * Operator nodes.
  * Apply osc manager onto this script.
- * Create phyiscal connections between nodes.
+ * Delete nodes, delete connections.
+ * For visual nodes: break up vectors into seperate x y and z
  */
 
 
@@ -104,7 +105,7 @@ public class MaxNode: Node
     // msgAddress is a poor variable name. It is actually what musical parameter (e.g. pitch, frequency etc)
     public void AllMessageHandler(OscMessage oscMessage)
     {
-        Debug.Log(oscMessage.Address);
+        //Debug.Log(oscMessage.Address);
         maxValue = (float)oscMessage.Values[0];
 
     }
@@ -370,20 +371,37 @@ public class NodeEditor : EditorWindow
                 // Update variables for scripts
                 temp.UpdateVisual(fieldInfo);
             }
-
-
         }
-
-
     }
 
     void OnGUI()
     {
+        // Keep drawing a line from selected rectangle to the mouse position
+        if (windowsToAttach.Count == 1)
+        {
+            // Repaint the GUI
+            Repaint();
+            // Draw curve between rect and mouse pos
+            DrawNodeCurve(windows[windowsToAttach[0]].rectangle, (Vector3)Event.current.mousePosition);
+        }
+
         // If windowsToAttach is full, add to connected nodes and reset.
         if (windowsToAttach.Count >= 2)
         {
-            // Check if nodes are already connected first!!!
+            // // Check if nodes are already connected first!!!
+            // if (attachedWindows.Contains(windowsToAttach[0]) && attachedWindows.Contains(windowsToAttach[1]))
+            // {
+            // 
+            //     // Do nothing
+            // }
+            // else
+            // {
+            //     // Add them to connection
+            //     attachedWindows.Add(windowsToAttach[0]);
+            //     attachedWindows.Add(windowsToAttach[1]); 
+            // }
 
+            // Add them to connection
             attachedWindows.Add(windowsToAttach[0]);
             attachedWindows.Add(windowsToAttach[1]);
             // Reset windowsToAttach.
@@ -422,6 +440,9 @@ public class NodeEditor : EditorWindow
         Event currentEvent = Event.current;
         if (currentEvent.type == EventType.ContextClick)
         {
+            // If right click was pressed, stop trying to create a connection
+            windowsToAttach.Clear();
+
             Vector2 mousePos = currentEvent.mousePosition;
             // Now create the menu, add items and show it
             GenericMenu menu = new GenericMenu();
@@ -443,6 +464,7 @@ public class NodeEditor : EditorWindow
             //for (int i = 0; i < propertyInfo.Count; i++)
             foreach (PropertyInfo currentPi in pi)
             {
+                
                 menu.AddItem(new GUIContent("VisualNodes/" + currentPi.Name), false, Callback, currentPi.Name);
             }
 
@@ -452,17 +474,10 @@ public class NodeEditor : EditorWindow
             foreach (FieldInfo currentFi in fi)
             {
                 menu.AddItem(new GUIContent("VisualNodes/" + currentFi.Name), false, Callback, currentFi.Name);
+                
             }
             menu.ShowAsContext();
             currentEvent.Use();
-        }
-
-        if (currentEvent.type == EventType.KeyDown)
-        {
-            //Debug.Log(currentEvent.);
-            Debug.Log(" key down thing");
-            Debug.Log("id: " + GUIUtility.keyboardControl);
-
         }
 
         EndWindows();
@@ -507,7 +522,8 @@ public class NodeEditor : EditorWindow
                     // Avoid duplicates
                     if (windowsToAttach.Contains(id))
                     {
-                        // Do nothing
+                        // If attach was pressed twice on the same node, stop trying to create a connection
+                        windowsToAttach.Clear();
                     }
                     else
                     {
@@ -552,6 +568,7 @@ public class NodeEditor : EditorWindow
                             if (pi.PropertyType == typeof(Vector3) || pi.PropertyType == typeof(float) ||
                                 pi.PropertyType == typeof(int))
                             {
+                                
                                 // Add each property to list of properties
                                 if (!(propertyInfo.ContainsKey(pi)))
                                     propertyInfo.Add(pi, component);
@@ -592,7 +609,7 @@ public class NodeEditor : EditorWindow
 
             if (temp.value != null)
             {
-                Debug.Log(temp.value.GetType());
+                //Debug.Log(temp.value.GetType());
                 // Vectors are displayed differently than floats and ints
                 if (temp.value.GetType() == typeof(Vector3))
                 {
@@ -616,11 +633,29 @@ public class NodeEditor : EditorWindow
         GUI.DragWindow();
     }
 
-
+    // Between 2 rectangles
     void DrawNodeCurve(Rect start, Rect end)
     {
         Vector3 startPos = new Vector3(start.x + start.width, start.y + start.height / 2, 0);
         Vector3 endPos = new Vector3(end.x, end.y + end.height / 2, 0);
+        Vector3 startTan = startPos + Vector3.right * 50;
+        Vector3 endTan = endPos + Vector3.left * 50;
+        Color shadowCol = new Color(0, 0, 0, 0.06f);
+
+        for (int i = 0; i < 3; i++)
+        {
+            // Draw a shadow
+            Handles.DrawBezier(startPos, endPos, startTan, endTan, shadowCol, null, (i + 1) * 5);
+        }
+
+        Handles.DrawBezier(startPos, endPos, startTan, endTan, Color.black, null, 1);
+    }
+
+    // Between rectangle and vector3
+    void DrawNodeCurve(Rect start, Vector3 end)
+    {
+        Vector3 startPos = new Vector3(start.x + start.width, start.y + start.height / 2, 0);
+        Vector3 endPos = new Vector3(end.x, end.y, 0);
         Vector3 startTan = startPos + Vector3.right * 50;
         Vector3 endTan = endPos + Vector3.left * 50;
         Color shadowCol = new Color(0, 0, 0, 0.06f);
@@ -639,7 +674,7 @@ public class NodeEditor : EditorWindow
     public void AllMessageHandler(OscMessage oscMessage)
     {
 
-        Debug.Log("Still working on this...");
+        //Debug.Log("Still working on this...");
     }
 }
 
