@@ -152,6 +152,7 @@ public class Osc
     public void SetAllMessageHandler(OscMessageHandler amh)
     {
         AllMessageHandler = amh;
+        Debug.Log("Max connection set up.");
     }
 
 
