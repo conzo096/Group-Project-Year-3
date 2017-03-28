@@ -97,7 +97,7 @@ public class Osc
 
                     foreach (OscMessage om in messages)
                     {
-                        Debug.Log(om.Address);
+                        //Debug.Log(om.Address);
                         if (AllMessageHandler != null)
                             AllMessageHandler(om);
                         OscMessageHandler h = (OscMessageHandler)Hashtable.Synchronized(AddressTable)[om.Address];

@@ -48,11 +48,13 @@ public class AudioNode : Node
     public AudioNode()
     {
         nodeName = "Audio";
+        value = 0;
     }
 
     public AudioNode(string name)
     {
         nodeName = name;
+        value = 0;
     }
 
     public AudioNode(Rect rec)
@@ -67,9 +69,9 @@ public class AudioNode : Node
     // Update value from osc message.
     public override void UpdateValues()
     {
-        //value = 5;
+        //value = (float)value+1;
         // Temporarily create a random num (for testing purposes)
-        value = Random.Range(0f, 1f);
+        //value = Random.Range(0f, 1f);
     }
 }
 
@@ -254,7 +256,6 @@ public class NodeEditor : EditorWindow
     public string RemoteIP = /*"146.176.164.4";*/ "127.0f.0.1f"; // signifies a local host (if testing locally
     public int SendToPort = 9000; //the port you will be sending from
     public int ListenerPort = 8050; //the port you will be listening on
-    //public Transform controller;
     private Osc handler;
 
     // List of properties from components
@@ -276,7 +277,6 @@ public class NodeEditor : EditorWindow
     static void Init()
     {
         NodeEditor window = (NodeEditor)GetWindow(typeof(NodeEditor));
-        //Debug.Log("HERE");
         UDPPacketIO udp = new UDPPacketIO();
         // Init the user datagram protocal.
         // Can change the listen port for each different input?
@@ -314,7 +314,8 @@ public class NodeEditor : EditorWindow
                 windows.Add(new AudioNode(new Rect(mousePos.x,mousePos.y,100,100), "Insert Parameter"));
                 break;
             case "MaxNode":
-                windows.Add(new MaxNode(new Rect(mousePos.x, mousePos.y, 100, 100), "MaxNode"));
+                Debug.Log("Not working right now");
+                //windows.Add(new MaxNode(new Rect(mousePos.x, mousePos.y, 100, 100), "MaxNode"));
                 break;
             case "ControllerNode":
                 windows.Add(new ControllerNode(new Rect(mousePos.x, mousePos.y, 200, 400), "ControllerNode"));
@@ -346,6 +347,22 @@ public class NodeEditor : EditorWindow
                 }
                 break;
         }
+
+        // If node is requested to be deleted, find it and remove.
+        if (nodeRequested.Contains("Delete"))
+        {
+            string[] values = nodeRequested.Split(':');
+            int index = int.Parse(values[1]);
+            Debug.Log(index);
+ 
+            // Remove node at location.
+            windows.RemoveAt(index);
+            // Next step. Find connections to node and remove them.
+            
+            //if ()
+            // If index location is even remove next one. If odd remove one behind.
+        }
+
     }
 
     void Update()
@@ -353,12 +370,12 @@ public class NodeEditor : EditorWindow
         // For each window
         for (int i = 0; i < windows.Count; i++)
         {
-
             // Update audio nodes
             if (windows[i] is AudioNode)
             {
                 AudioNode temp = (AudioNode)windows[i];
                 temp.UpdateValues();
+                
             }
 
             // Update visual nodes
@@ -376,6 +393,18 @@ public class NodeEditor : EditorWindow
 
     void OnGUI()
     {
+        for (int i = 0; i < windows.Count; i++)
+        {
+            if (Event.current.type == EventType.MouseDrag)
+            {
+                // Debug.Log("Rec: " + windows[id].rectangle);
+                //Debug.Log("Mou: " + Event.current.mousePosition);
+                if (windows[i].rectangle.Contains(Event.current.mousePosition))
+                    windows[i].rectangle.position = Event.current.mousePosition;
+            }
+        }
+
+
         // Keep drawing a line from selected rectangle to the mouse position
         if (windowsToAttach.Count == 1)
         {
@@ -388,26 +417,71 @@ public class NodeEditor : EditorWindow
         // If windowsToAttach is full, add to connected nodes and reset.
         if (windowsToAttach.Count >= 2)
         {
-            // // Check if nodes are already connected first!!!
-            // if (attachedWindows.Contains(windowsToAttach[0]) && attachedWindows.Contains(windowsToAttach[1]))
-            // {
-            // 
-            //     // Do nothing
-            // }
-            // else
-            // {
-            //     // Add them to connection
-            //     attachedWindows.Add(windowsToAttach[0]);
-            //     attachedWindows.Add(windowsToAttach[1]); 
-            // }
-
             // Add them to connection
             attachedWindows.Add(windowsToAttach[0]);
             attachedWindows.Add(windowsToAttach[1]);
             // Reset windowsToAttach.
             windowsToAttach = new List<int>();
         }
+        // Beginning area for popup windows.
         BeginWindows();
+        
+
+        // Draw right click menu and populate list. Also check for right click event.
+        Event currentEvent = Event.current;
+        // Create generic menu.
+        GenericMenu menu = new GenericMenu();
+        // Capture current mouse position.
+        Vector2 mousePos = currentEvent.mousePosition;
+
+        // If right click, generate window.
+
+        if (currentEvent.type == EventType.ContextClick)
+        { 
+            // Add delete option.
+            for (int i = 0; i < windows.Count; i++)
+            {
+                if (windows[i].rectangle.Contains(mousePos))
+                {
+                    menu.AddItem(new GUIContent("Delete"), false, Callback, "Delete:" + i);
+                    menu.AddSeparator("");
+                }
+            }
+            // If right click was pressed, stop trying to create a connection
+            windowsToAttach.Clear();
+
+            // Now create the menu, add items and show it
+            menu.AddItem(new GUIContent("ControllerNode"), false, Callback, "ControllerNode");
+            menu.AddSeparator("");
+            menu.AddItem(new GUIContent("VisualNodes/"), false, Callback, "V");
+            menu.AddSeparator("");
+            menu.AddItem(new GUIContent("Operators/"), false, Callback, "O");
+            menu.AddSeparator("");
+            menu.AddItem(new GUIContent("AudioNodes/Amplitude"), false, Callback, "Amplitude");
+            menu.AddItem(new GUIContent("AudioNodes/Pitch"), false, Callback, "Pitch");
+            menu.AddItem(new GUIContent("AudioNodes/Volume"), false, Callback, "Volume");
+            menu.AddItem(new GUIContent("AudioNodes/GenericAudio"), false, Callback, "GenericAudio");
+         //   menu.AddSeparator("");
+         //   menu.AddItem(new GUIContent("MaxMSP/MaxMSP"), false, Callback, "MaxNode");
+            // What does this part do?
+            List<PropertyInfo> pi = new List<PropertyInfo>(propertyInfo.Keys);
+
+            foreach (PropertyInfo currentPi in pi)
+            {
+                menu.AddItem(new GUIContent("VisualNodes/" + currentPi.Name), false, Callback, currentPi.Name);
+            }
+
+            List<FieldInfo> fi = new List<FieldInfo>(fieldInfo.Keys);
+
+            foreach (FieldInfo currentFi in fi)
+            {
+                menu.AddItem(new GUIContent("VisualNodes/" + currentFi.Name), false, Callback, currentFi.Name);
+            }
+
+            menu.ShowAsContext();
+            currentEvent.Use();
+        }
+
         // For each window, draw window.
         for (int i = 0; i < windows.Count; i++)
         {
@@ -436,50 +510,7 @@ public class NodeEditor : EditorWindow
             windows[attachedWindows[i + 1]].value = windows[attachedWindows[i]].value;
         }
 
-        // Draw right click menu and populate list. Also check for right click event.
-        Event currentEvent = Event.current;
-        if (currentEvent.type == EventType.ContextClick)
-        {
-            // If right click was pressed, stop trying to create a connection
-            windowsToAttach.Clear();
-
-            Vector2 mousePos = currentEvent.mousePosition;
-            // Now create the menu, add items and show it
-            GenericMenu menu = new GenericMenu();
-            menu.AddItem(new GUIContent("ControllerNode"), false, Callback, "ControllerNode");
-            menu.AddSeparator("");
-            menu.AddItem(new GUIContent("VisualNodes/"), false, Callback, "V");
-            menu.AddSeparator("");
-            menu.AddItem(new GUIContent("Operators/"), false, Callback, "O");
-            menu.AddSeparator("");
-            menu.AddItem(new GUIContent("AudioNodes/Amplitude"), false, Callback, "Amplitude");
-            menu.AddItem(new GUIContent("AudioNodes/Pitch"), false, Callback, "Pitch");
-            menu.AddItem(new GUIContent("AudioNodes/Volume"), false, Callback, "Volume");
-            menu.AddItem(new GUIContent("AudioNodes/GenericAudio"), false, Callback, "GenericAudio");
-            menu.AddSeparator("");
-            menu.AddItem(new GUIContent("MaxMSP/MaxMSP"), false, Callback, "MaxNode");
-
-            List<PropertyInfo> pi = new List<PropertyInfo>(propertyInfo.Keys);
-
-            //for (int i = 0; i < propertyInfo.Count; i++)
-            foreach (PropertyInfo currentPi in pi)
-            {
-                
-                menu.AddItem(new GUIContent("VisualNodes/" + currentPi.Name), false, Callback, currentPi.Name);
-            }
-
-            List<FieldInfo> fi = new List<FieldInfo>(fieldInfo.Keys);
-
-            //for (int i = 0; i < fieldInfo.Count; i++)
-            foreach (FieldInfo currentFi in fi)
-            {
-                menu.AddItem(new GUIContent("VisualNodes/" + currentFi.Name), false, Callback, currentFi.Name);
-                
-            }
-            menu.ShowAsContext();
-            currentEvent.Use();
-        }
-
+        
         EndWindows();
     }
 
@@ -504,14 +535,13 @@ public class NodeEditor : EditorWindow
         windows[id].nodeName = GUILayout.TextArea(windows[id].nodeName);
         MaxNode temp = (MaxNode)windows[id];
         windows[id].nodeName = GUILayout.TextArea(temp.inPort.ToString());
-        // windows[id].nodeName = EditorGUI.TextArea(windows[id].rectangle,"hi");
-        GUI.DragWindow();
+        GUI.DragWindow(new Rect(0, 0, 100, 20));
     }
-
 
     // Draws the node window.
     void DrawNodeWindow(int id)
     {
+    
         // Controller node cannot attach to anything
         if (windows[id].GetType() != typeof(ControllerNode))
         {
@@ -531,9 +561,16 @@ public class NodeEditor : EditorWindow
                     }
                 }
             }
+        }
         windows[id].nodeName = GUILayout.TextArea(windows[id].nodeName);
-        //MaxNode temp = (MaxNode)windows[id];
-      
+        if (windows[id] is AudioNode)
+        {
+            // It is stored to a temp variable to prevent user from messing with the audio parameters. Change
+            string t = "No Value...";
+            //Debug.Log(windows[id].value);
+            if (windows[id].value != null)
+               t = windows[id].value.ToString();
+            GUILayout.Label(t);
         }
 
         // If controller node
@@ -591,7 +628,6 @@ public class NodeEditor : EditorWindow
                                 // Add each field to list of fields
                                 if (!(fieldInfo.ContainsKey(fi)))
                                     fieldInfo.Add(fi, component);
-
                                 // Set up GUI on controller
                                 // GUILayout.Toggle(value, fi.Name);
                                 // GUILayout.TextField(fi.GetValue(obj).ToString());
@@ -629,8 +665,8 @@ public class NodeEditor : EditorWindow
             }
                 
         }
-
-        GUI.DragWindow();
+        // YOu can drag the window if it is along the header - Visual que? 
+        GUI.DragWindow(new Rect(0,0,100,20));
     }
 
     // Between 2 rectangles
@@ -673,8 +709,29 @@ public class NodeEditor : EditorWindow
     // msgAddress is a poor variable name. It is actually what musical parameter (e.g. pitch, frequency etc)
     public void AllMessageHandler(OscMessage oscMessage)
     {
+        //Debug.Log(oscMessage.Address);
+        // Where do send it too.
+        string incAddress = oscMessage.Address;
+        // Value it contains.
+        object incValue = oscMessage.Values[0];
 
-        //Debug.Log("Still working on this...");
+        // Search each audio node to find where to send it.
+        for (int i = 0; i < windows.Count; i++)
+        {
+            // First check if correct class type.
+            if (windows[i] is AudioNode)
+            {
+                // If windows contains name to this address.
+                if (incAddress.Contains(windows[i].nodeName))
+                {
+                    //Debug.Log("Found");
+                    windows[i].value = incValue;
+                    Debug.Log(windows[i].value);
+                    
+                }
+
+            }
+        }
     }
 }
 
