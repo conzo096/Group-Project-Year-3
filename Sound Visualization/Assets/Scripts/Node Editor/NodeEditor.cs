@@ -76,7 +76,7 @@ public class AudioNode : Node
     }
 }
 
-public class MaxNode: Node
+public class MaxNode : Node
 {
     // Port to listen on
     public int inPort = 8050;
@@ -311,7 +311,7 @@ public class OperatorNode : Node
                     break;
 
             }
-            
+
             //Debug.Log(this.output);
         }
     }
@@ -345,7 +345,7 @@ public class NodeEditor : EditorWindow
 
     // IDS of connected nodes.
     List<int> attachedWindows = new List<int>();
-  
+
     [MenuItem("Window/Node Editor")]
     static void Init()
     {
@@ -357,7 +357,7 @@ public class NodeEditor : EditorWindow
         window.handler = new Osc();
         window.handler.init(udp);
         window.handler.SetAllMessageHandler(window.AllMessageHandler);
-        
+
         window.Show();
 
     }
@@ -366,7 +366,7 @@ public class NodeEditor : EditorWindow
     void Callback(object obj)
     {
         //Event currentEvent = Event.current;
-       // Debug.Log(currentEvent.mousePosition);
+        // Debug.Log(currentEvent.mousePosition);
         Vector2 mousePos;// = currentEvent.mousePosition;
         mousePos = new Vector2(10, 10);
         string nodeRequested = obj.ToString();
@@ -385,7 +385,7 @@ public class NodeEditor : EditorWindow
                 windows.Add(new AudioNode(new Rect(mousePos.x, mousePos.y, 100, 100), "Pitch"));
                 break;
             case "GenericAudio":
-                windows.Add(new AudioNode(new Rect(mousePos.x,mousePos.y, 100,100), "Insert Parameter"));
+                windows.Add(new AudioNode(new Rect(mousePos.x, mousePos.y, 100, 100), "Insert Parameter"));
                 break;
             case "MaxNode":
                 Debug.Log("Not working right now");
@@ -431,13 +431,33 @@ public class NodeEditor : EditorWindow
             string[] values = nodeRequested.Split(':');
             int index = int.Parse(values[1]);
             Debug.Log(index);
- 
+
+
             // Remove node at location.
+            Node toDelete = windows[index];
             windows.RemoveAt(index);
             // Next step. Find connections to node and remove them.
-            
-            //if ()
-            // If index location is even remove next one. If odd remove one behind.
+            List<int> oldList = new List<int>(attachedWindows);
+
+            // Delete node ahead
+            if (index % 2 == 0)
+            {
+                // iterate backwards.
+                for (int i = attachedWindows.Count-1; i > 0; i--)
+                {
+                    attachedWindows.RemoveAt(i);
+                    attachedWindows.RemoveAt(i + 1);
+                    i = i+1;            
+                }
+            }
+            // Delete node behind.
+            else
+                for (int i = attachedWindows.Count-1; i >= 0; i--)
+                {
+                    attachedWindows.RemoveAt(i);
+                    attachedWindows.RemoveAt(i-1);
+                    i = i - 1;
+                }
         }
 
     }
@@ -452,7 +472,7 @@ public class NodeEditor : EditorWindow
             {
                 AudioNode temp = (AudioNode)windows[i];
                 temp.UpdateValues();
-                
+
             }
 
             // Update visual nodes
@@ -480,17 +500,6 @@ public class NodeEditor : EditorWindow
 
     void OnGUI()
     {
-        for (int i = 0; i < windows.Count; i++)
-        {
-            if (Event.current.type == EventType.MouseDrag)
-            {
-                // Debug.Log("Rec: " + windows[id].rectangle);
-                //Debug.Log("Mou: " + Event.current.mousePosition);
-                if (windows[i].rectangle.Contains(Event.current.mousePosition))
-                    windows[i].rectangle.position = Event.current.mousePosition;
-            }
-        }
-
 
         // Keep drawing a line from selected rectangle to the mouse position
         if (windowsToAttach.Count == 1)
@@ -512,7 +521,7 @@ public class NodeEditor : EditorWindow
         }
         // Beginning area for popup windows.
         BeginWindows();
-        
+
         // Connection
         for (int i = 0; i < attachedWindows.Count; i += 2)
         {
@@ -544,7 +553,7 @@ public class NodeEditor : EditorWindow
         // If right click, generate window.
 
         if (currentEvent.type == EventType.ContextClick)
-        { 
+        {
             // Add delete option.
             for (int i = 0; i < windows.Count; i++)
             {
@@ -568,8 +577,8 @@ public class NodeEditor : EditorWindow
             menu.AddItem(new GUIContent("AudioNodes/Pitch"), false, Callback, "Pitch");
             menu.AddItem(new GUIContent("AudioNodes/Volume"), false, Callback, "Volume");
             menu.AddItem(new GUIContent("AudioNodes/GenericAudio"), false, Callback, "GenericAudio");
-         //   menu.AddSeparator("");
-         //   menu.AddItem(new GUIContent("MaxMSP/MaxMSP"), false, Callback, "MaxNode");
+            //   menu.AddSeparator("");
+            //   menu.AddItem(new GUIContent("MaxMSP/MaxMSP"), false, Callback, "MaxNode");
             // What does this part do?
             List<PropertyInfo> pi = new List<PropertyInfo>(propertyInfo.Keys);
 
@@ -606,7 +615,7 @@ public class NodeEditor : EditorWindow
             else
                 windows[i].rectangle = GUI.Window(i, windows[i].rectangle, DrawNodeWindow, windows[i].nodeName);
         }
-        
+
         // Connection
         for (int i = 0; i < attachedWindows.Count; i += 2)
         {
@@ -617,7 +626,7 @@ public class NodeEditor : EditorWindow
             windows[attachedWindows[i + 1]].value = windows[attachedWindows[i]].value;
         }
 
-        
+
         EndWindows();
     }
 
@@ -648,7 +657,7 @@ public class NodeEditor : EditorWindow
     // Draws the node window.
     void DrawNodeWindow(int id)
     {
-    
+
         // Controller node cannot attach to anything
         if (windows[id].GetType() != typeof(ControllerNode))
         {
@@ -676,7 +685,7 @@ public class NodeEditor : EditorWindow
             string t = "No Value...";
             //Debug.Log(windows[id].value);
             if (windows[id].value != null)
-               t = windows[id].value.ToString();
+                t = windows[id].value.ToString();
             GUILayout.Label(t);
         }
 
@@ -707,7 +716,7 @@ public class NodeEditor : EditorWindow
                         // For most components
                         foreach (PropertyInfo pi in component.GetType().GetProperties())
                         {
-                            System.Object obj = (System.Object)component;
+                            object obj = component;
                             // Only use objects of type Vector3, float, int.
                             if (pi.PropertyType == typeof(Vector3) || pi.PropertyType == typeof(float) ||
                                 pi.PropertyType == typeof(int))
@@ -730,7 +739,7 @@ public class NodeEditor : EditorWindow
                             if (fi.FieldType == typeof(Vector3) || fi.FieldType == typeof(float) ||
                                 fi.FieldType == typeof(int))
                             {
-                                System.Object obj = (System.Object)component;
+                                Object obj = component;
 
                                 // Add each field to list of fields
                                 if (!(fieldInfo.ContainsKey(fi)))
@@ -787,7 +796,7 @@ public class NodeEditor : EditorWindow
 
         }
         // YOu can drag the window if it is along the header - Visual que? 
-        
+
 
         else if (windows[id].GetType() == typeof(OperatorNode))
         {
@@ -867,7 +876,7 @@ public class NodeEditor : EditorWindow
                     //Debug.Log("Found");
                     windows[i].value = incValue;
                     Debug.Log(windows[i].value);
-                    
+
                 }
 
             }
