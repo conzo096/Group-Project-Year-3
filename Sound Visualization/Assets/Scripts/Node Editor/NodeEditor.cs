@@ -76,7 +76,39 @@ public class AudioNode : Node
     }
 }
 
-public class MaxNode : Node
+// Node for testing
+public class RandomGeneratorNode : Node
+{
+    public RandomGeneratorNode()
+    {
+        nodeName = "Random";
+        value = 0;
+    }
+
+    public RandomGeneratorNode(string name)
+    {
+        nodeName = name;
+        value = 0;
+    }
+
+    public RandomGeneratorNode(Rect rec)
+    {
+        rectangle = rec;
+    }
+    public RandomGeneratorNode(Rect rec, string name) : this(rec)
+    {
+        nodeName = name;
+    }
+
+    // Update value randomly.
+    public override void UpdateValues()
+    {
+        // Temporarily create a random num (for testing purposes)
+        value = Random.Range(0f, 1f);
+    }
+}
+
+public class MaxNode: Node
 {
     // Port to listen on
     public int inPort = 8050;
@@ -160,6 +192,9 @@ public class VisualNode : Node
     public FieldInfo fieldInfo;
     public System.Object compObj;
 
+    // Tracks which properties of a Vector3 to change
+    public bool[] Vectors = new bool[3];
+
     public VisualNode(Rect r, string name, object value)
     {
         rectangle = r;
@@ -170,6 +205,7 @@ public class VisualNode : Node
     // Updates the variables of a component
     public void UpdateVisual(Dictionary<PropertyInfo, Component> propertyInfoDictionary)
     {
+        
         // Temp value
         //this.value = Random.Range(0f, 1f);//new Vector3(Random.Range(0f, 1f), Random.Range(0f, 1f), Random.Range(0f, 1f));
         if (this.value != null)
@@ -191,8 +227,19 @@ public class VisualNode : Node
                     // Update as vector
                     if (propertyInfo[i].PropertyType == typeof(Vector3))
                     {
+                        float theValue = (float)this.value;
+
                         // Cast
-                        Vector3 vector3Value = new Vector3((float)this.value, (float)this.value, (float)this.value);
+                        Vector3 vector3Value = (Vector3)propertyInfo[i].GetValue(compObj, null);
+
+                        // Loop through each vector attribute
+                        for (int j = 0; j < 3; j++)
+                        {
+                            // If true, overwrite current value with the incoming value
+                            if (Vectors[j])
+                                vector3Value[j] = (float)this.value;
+
+                        }
                         // Set the value
                         propertyInfo[i].SetValue(compObj, vector3Value, null);
                     }
@@ -239,8 +286,20 @@ public class VisualNode : Node
                     // Update as vector
                     if (fieldInfo[i].FieldType == typeof(Vector3))
                     {
+                        float theValue = (float)this.value;
+                        
                         // Cast
-                        Vector3 vector3Value = new Vector3((float)this.value, (float)this.value, (float)this.value);
+                        Vector3 vector3Value = (Vector3)fieldInfo[i].GetValue(compObj);//new Vector3((float)this.value, (float)this.value, (float)this.value);
+
+                        // Loop through each vector attribute
+                        for (int j = 0; j < 3; j++)
+                        {
+                            // If true, overwrite current value with the incoming value
+                            if (Vectors[i])
+                                vector3Value[i] = (float)this.value;
+
+                        }
+
                         // Set the value
                         fieldInfo[i].SetValue(compObj, vector3Value);
                     }
@@ -351,8 +410,8 @@ public class NodeEditor : EditorWindow
     {
         NodeEditor window = (NodeEditor)GetWindow(typeof(NodeEditor));
         UDPPacketIO udp = new UDPPacketIO();
-        // Init the user datagram protocal.
-        // Can change the listen port for each different input?
+        //// Init the user datagram protocal.
+        //// Can change the listen port for each different input?
         udp.init(window.RemoteIP, window.SendToPort, window.ListenerPort);
         window.handler = new Osc();
         window.handler.init(udp);
@@ -375,6 +434,9 @@ public class NodeEditor : EditorWindow
             /*
              * Audio Nodes.
              */
+            case "Random":
+                windows.Add(new RandomGeneratorNode(new Rect(mousePos.x, mousePos.y, 100, 100), "Random"));
+                break;
             case "Amplitude":
                 windows.Add(new AudioNode(new Rect(mousePos.x, mousePos.y, 100, 100), "Amplitude"));
                 break;
@@ -395,7 +457,7 @@ public class NodeEditor : EditorWindow
                 windows.Add(new ControllerNode(new Rect(mousePos.x, mousePos.y, 200, 400), "ControllerNode"));
                 break;
             case "Operator":
-                windows.Add(new OperatorNode(new Rect(mousePos.x, mousePos.y, 200, 100), "Operator"));
+                windows.Add(new OperatorNode(new Rect(mousePos.x, mousePos.y, 200, 150), "Operator"));
                 break;
             default:
                 // Do this for all of components other than scripts
@@ -407,7 +469,7 @@ public class NodeEditor : EditorWindow
                         Component comp;
                         propertyInfo.TryGetValue(currentPi, out comp);
                         System.Object compObj = (System.Object)comp;
-                        windows.Add(new VisualNode(new Rect(mousePos.x, mousePos.y, 150, 100), nodeRequested, currentPi.GetValue(compObj, null)));
+                        windows.Add(new VisualNode(new Rect(mousePos.x, mousePos.y, 150, 200), nodeRequested, currentPi.GetValue(compObj, null)));
                     }
                 }
                 // Do this for script components
@@ -419,7 +481,7 @@ public class NodeEditor : EditorWindow
                         Component comp;
                         fieldInfo.TryGetValue(currentFi, out comp);
                         System.Object compObj = (System.Object)comp;
-                        windows.Add(new VisualNode(new Rect(mousePos.x, mousePos.y, 150, 100), nodeRequested, currentFi.GetValue(compObj)));
+                        windows.Add(new VisualNode(new Rect(mousePos.x, mousePos.y, 150, 200), nodeRequested, currentFi.GetValue(compObj)));
                     }
                 }
                 break;
@@ -437,13 +499,12 @@ public class NodeEditor : EditorWindow
             Node toDelete = windows[index];
             windows.RemoveAt(index);
             // Next step. Find connections to node and remove them.
-            List<int> oldList = new List<int>(attachedWindows);
 
             // Delete node ahead
             if (index % 2 == 0)
             {
                 // iterate backwards.
-                for (int i = attachedWindows.Count-1; i > 0; i--)
+                for (int i = attachedWindows.Count-1; i >= 0; i--)
                 {
                     attachedWindows.RemoveAt(i);
                     attachedWindows.RemoveAt(i + 1);
@@ -474,7 +535,13 @@ public class NodeEditor : EditorWindow
                 temp.UpdateValues();
 
             }
-
+            //// Update audio nodes
+            //if (windows[i] is AudioNode)
+            //{
+            //    AudioNode temp = (AudioNode)windows[i];
+            //    temp.UpdateValues();
+            //    
+            //}
             // Update visual nodes
             if (windows[i] is VisualNode)
             {
@@ -493,6 +560,15 @@ public class NodeEditor : EditorWindow
                 OperatorNode temp = (OperatorNode)windows[i];
                 temp.CalculateOutput();
             }
+
+            // Update rng nodes
+            if (windows[i] is RandomGeneratorNode)
+            {
+                RandomGeneratorNode temp = (RandomGeneratorNode)windows[i];
+                temp.UpdateValues();
+
+            }
+
         }
         Repaint();
 
@@ -500,7 +576,6 @@ public class NodeEditor : EditorWindow
 
     void OnGUI()
     {
-
         // Keep drawing a line from selected rectangle to the mouse position
         if (windowsToAttach.Count == 1)
         {
@@ -569,10 +644,11 @@ public class NodeEditor : EditorWindow
             // Now create the menu, add items and show it
             menu.AddItem(new GUIContent("ControllerNode"), false, Callback, "ControllerNode");
             menu.AddSeparator("");
-            menu.AddItem(new GUIContent("VisualNodes/"), false, Callback, "V");
-            menu.AddSeparator("");
+            //menu.AddItem(new GUIContent("VisualNodes/"), false, Callback, "V");
+            //menu.AddSeparator("");
             menu.AddItem(new GUIContent("Operator"), false, Callback, "Operator");
             menu.AddSeparator("");
+            menu.AddItem(new GUIContent("AudioNodes/Random"), false, Callback, "Random");
             menu.AddItem(new GUIContent("AudioNodes/Amplitude"), false, Callback, "Amplitude");
             menu.AddItem(new GUIContent("AudioNodes/Pitch"), false, Callback, "Pitch");
             menu.AddItem(new GUIContent("AudioNodes/Volume"), false, Callback, "Volume");
@@ -584,14 +660,14 @@ public class NodeEditor : EditorWindow
 
             foreach (PropertyInfo currentPi in pi)
             {
-                menu.AddItem(new GUIContent("VisualNodes/" + currentPi.Name), false, Callback, currentPi.Name);
+                menu.AddItem(new GUIContent("VisualNodes/" + currentPi.DeclaringType + "/" + currentPi.Name), false, Callback, currentPi.Name);
             }
 
             List<FieldInfo> fi = new List<FieldInfo>(fieldInfo.Keys);
 
             foreach (FieldInfo currentFi in fi)
             {
-                menu.AddItem(new GUIContent("VisualNodes/" + currentFi.Name), false, Callback, currentFi.Name);
+                menu.AddItem(new GUIContent("VisualNodes/" + currentFi.DeclaringType + "/" + currentFi.Name), false, Callback, currentFi.Name);
             }
 
             menu.ShowAsContext();
@@ -615,7 +691,6 @@ public class NodeEditor : EditorWindow
             else
                 windows[i].rectangle = GUI.Window(i, windows[i].rectangle, DrawNodeWindow, windows[i].nodeName);
         }
-
         // Connection
         for (int i = 0; i < attachedWindows.Count; i += 2)
         {
@@ -625,8 +700,6 @@ public class NodeEditor : EditorWindow
             // Pass along the value for the connection, from left to right
             windows[attachedWindows[i + 1]].value = windows[attachedWindows[i]].value;
         }
-
-
         EndWindows();
     }
 
@@ -690,7 +763,7 @@ public class NodeEditor : EditorWindow
         }
 
         // If controller node
-        if (windows[id].GetType() == typeof(ControllerNode))
+        if (windows[id] is ControllerNode)
         {
             // Cast and add TextArea
             ControllerNode temp = (ControllerNode)windows[id];
@@ -753,7 +826,7 @@ public class NodeEditor : EditorWindow
                 }
             }
         }
-        else if (windows[id].GetType() == typeof(VisualNode))
+        else if (windows[id] is VisualNode)
         {
             // Cast and add TextField for value
             VisualNode temp = (VisualNode)windows[id];
@@ -761,20 +834,30 @@ public class NodeEditor : EditorWindow
 
             if (temp.value != null)
             {
+                
                 //Debug.Log(temp.value.GetType());
                 // Vectors are displayed differently than floats and ints
                 if (temp.propertyInfo != null)
                 {
                     if (temp.propertyInfo.PropertyType == typeof(Vector3))
                     {
+
                         // Cast object to Vector3
                         Vector3 vector3Value = (Vector3)temp.propertyInfo.GetValue(temp.compObj, null);
+
                         // Display Vector3
                         EditorGUILayout.Vector3Field("", vector3Value);
+
+                        // Toggle boxes
+                        EditorGUILayout.BeginHorizontal();
+                        temp.Vectors[0] = EditorGUILayout.Toggle(temp.Vectors[0]);
+                        temp.Vectors[1] = EditorGUILayout.Toggle(temp.Vectors[1]);
+                        temp.Vectors[2] = EditorGUILayout.Toggle(temp.Vectors[2]);
+                        EditorGUILayout.EndHorizontal();
                     }
                     else
                     {
-                        GUILayout.TextField(temp.value.ToString());
+                        EditorGUILayout.FloatField((float)temp.value);
                     }
                 }
                 if (temp.fieldInfo != null)
@@ -786,10 +869,17 @@ public class NodeEditor : EditorWindow
 
                         // Display Vector3
                         EditorGUILayout.Vector3Field("", vector3Value);
+
+                        // Toggle boxes
+                        EditorGUILayout.BeginHorizontal();
+                        temp.Vectors[0] = EditorGUILayout.Toggle(temp.Vectors[0]);
+                        temp.Vectors[1] = EditorGUILayout.Toggle(temp.Vectors[1]);
+                        temp.Vectors[2] = EditorGUILayout.Toggle(temp.Vectors[2]);
+                        EditorGUILayout.EndHorizontal();
                     }
                     else
                     {
-                        GUILayout.TextField(temp.value.ToString());
+                        EditorGUILayout.FloatField((float)temp.value);
                     }
                 }
             }
@@ -798,13 +888,14 @@ public class NodeEditor : EditorWindow
         // YOu can drag the window if it is along the header - Visual que? 
 
 
-        else if (windows[id].GetType() == typeof(OperatorNode))
+        else if (windows[id] is OperatorNode)
         {
             OperatorNode temp = (OperatorNode)windows[id];
 
             //float.TryParse(GUILayout.TextField(temp.modifier.ToString()), out temp.modifier);
             //temp.modifier = EditorGUI.FloatField(new Rect(windows[id].rectangle.width - 60, windows[id].rectangle.height - 25, 50, 20), temp.modifier);
             temp.modifier = EditorGUILayout.FloatField("Modifier:", temp.modifier);
+
             //Transform selectedObj = Selection.activeTransform;
 
             display = (Operators)EditorGUILayout.EnumPopup(
@@ -813,8 +904,11 @@ public class NodeEditor : EditorWindow
 
             temp.UpdateState(display);
 
+            // Show output
+            EditorGUILayout.FloatField("Output:", temp.output);
+
         }
-        //GUI.DragWindow();
+       
         GUI.DragWindow(new Rect(0, 0, 100, 20));
     }
 
