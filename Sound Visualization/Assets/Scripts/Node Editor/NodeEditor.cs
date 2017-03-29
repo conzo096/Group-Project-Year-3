@@ -4,11 +4,10 @@ using System.Collections.Generic;
 using System.Reflection;
 
 /* TODO LIST.
- * Operator nodes.
- * Apply osc manager onto this script.
- * Delete nodes, delete connections.
- * For visual nodes: break up vectors into seperate x y and z
+ * Apply osc manager onto this script. (Is this done?)
+ * Delete connections
  * Make sure when connecting nodes audio is on left side and visual on right side
+ * Either multiple controller nodes, or one controller node supporting multiple gameobjects
  */
 
 
@@ -383,6 +382,9 @@ public class OperatorNode : Node
 
 public class NodeEditor : EditorWindow
 {
+    // Object field for controller node
+    Object fromObjectField = new Object();
+   
     Operators display = Operators.Multiply;
     //OSC variables
     public string RemoteIP = /*"146.176.164.4";*/ "127.0f.0.1f"; // signifies a local host (if testing locally
@@ -409,13 +411,13 @@ public class NodeEditor : EditorWindow
     static void Init()
     {
         NodeEditor window = (NodeEditor)GetWindow(typeof(NodeEditor));
-        UDPPacketIO udp = new UDPPacketIO();
-        //// Init the user datagram protocal.
-        //// Can change the listen port for each different input?
-        udp.init(window.RemoteIP, window.SendToPort, window.ListenerPort);
-        window.handler = new Osc();
-        window.handler.init(udp);
-        window.handler.SetAllMessageHandler(window.AllMessageHandler);
+        //UDPPacketIO udp = new UDPPacketIO();
+        ////// Init the user datagram protocal.
+        ////// Can change the listen port for each different input?
+        //udp.init(window.RemoteIP, window.SendToPort, window.ListenerPort);
+        //window.handler = new Osc();
+        //window.handler.init(udp);
+        //window.handler.SetAllMessageHandler(window.AllMessageHandler);
 
         window.Show();
 
@@ -497,7 +499,20 @@ public class NodeEditor : EditorWindow
 
             // Remove node at location.
             Node toDelete = windows[index];
+
+            // If deleting a controller node
+            if (toDelete is ControllerNode)
+            {
+                // Delete every visual node
+                for (int i = 0; i < windows.Count; i++)
+                {
+                    if (windows[i] is VisualNode)
+                        windows.Remove(windows[i]);
+                }
+            }
+
             windows.RemoveAt(index);
+
             // Next step. Find connections to node and remove them.
 
             // Delete node ahead
@@ -506,8 +521,8 @@ public class NodeEditor : EditorWindow
                 // iterate backwards.
                 for (int i = attachedWindows.Count-1; i >= 0; i--)
                 {
-                    attachedWindows.RemoveAt(i);
-                    attachedWindows.RemoveAt(i + 1);
+                    attachedWindows.Remove(i);
+                    attachedWindows.Remove(i + 1);
                     i = i+1;            
                 }
             }
@@ -515,8 +530,8 @@ public class NodeEditor : EditorWindow
             else
                 for (int i = attachedWindows.Count-1; i >= 0; i--)
                 {
-                    attachedWindows.RemoveAt(i);
-                    attachedWindows.RemoveAt(i-1);
+                    attachedWindows.Remove(i);
+                    attachedWindows.Remove(i-1);
                     i = i - 1;
                 }
         }
@@ -656,18 +671,19 @@ public class NodeEditor : EditorWindow
             //   menu.AddSeparator("");
             //   menu.AddItem(new GUIContent("MaxMSP/MaxMSP"), false, Callback, "MaxNode");
             // What does this part do?
+            menu.AddSeparator("");
             List<PropertyInfo> pi = new List<PropertyInfo>(propertyInfo.Keys);
 
             foreach (PropertyInfo currentPi in pi)
             {
-                menu.AddItem(new GUIContent("VisualNodes/" + currentPi.DeclaringType + "/" + currentPi.Name), false, Callback, currentPi.Name);
+                menu.AddItem(new GUIContent("VisualNodes/" + fromObjectField.name + "/"  + currentPi.DeclaringType + "/" + currentPi.Name), false, Callback, currentPi.Name);
             }
 
             List<FieldInfo> fi = new List<FieldInfo>(fieldInfo.Keys);
 
             foreach (FieldInfo currentFi in fi)
             {
-                menu.AddItem(new GUIContent("VisualNodes/" + currentFi.DeclaringType + "/" + currentFi.Name), false, Callback, currentFi.Name);
+                menu.AddItem(new GUIContent("VisualNodes/" + fromObjectField.name + "/" + currentFi.DeclaringType + "/" + currentFi.Name), false, Callback, currentFi.Name);
             }
 
             menu.ShowAsContext();
@@ -690,15 +706,6 @@ public class NodeEditor : EditorWindow
             }
             else
                 windows[i].rectangle = GUI.Window(i, windows[i].rectangle, DrawNodeWindow, windows[i].nodeName);
-        }
-        // Connection
-        for (int i = 0; i < attachedWindows.Count; i += 2)
-        {
-            // Draw the connection
-            DrawNodeCurve(windows[attachedWindows[i]].rectangle, windows[attachedWindows[i + 1]].rectangle);
-
-            // Pass along the value for the connection, from left to right
-            windows[attachedWindows[i + 1]].value = windows[attachedWindows[i]].value;
         }
         EndWindows();
     }
@@ -768,8 +775,19 @@ public class NodeEditor : EditorWindow
             // Cast and add TextArea
             ControllerNode temp = (ControllerNode)windows[id];
             //temp.gameObjectTag = GUILayout.TextArea(temp.gameObjectTag);
-            temp.visual = EditorGUILayout.ObjectField(temp.visual, typeof(Object), true);
-            temp.Test();
+            // Disable GUI for object field
+            if (fromObjectField != null)
+                GUI.enabled = false;
+            fromObjectField = EditorGUILayout.ObjectField(fromObjectField, typeof(Object), true);
+            // Enable GUI for rest
+            if (fromObjectField != null)
+                GUI.enabled = true;
+                // Link visual object to given visual node, only once
+            if (temp.visual == null)
+            {
+                temp.visual = fromObjectField;
+                temp.Test();
+            }
 
             if (temp.visual != null)
             {
@@ -917,17 +935,39 @@ public class NodeEditor : EditorWindow
     {
         Vector3 startPos = new Vector3(start.x + start.width, start.y + start.height / 2, 0);
         Vector3 endPos = new Vector3(end.x, end.y + end.height / 2, 0);
+        Vector3 midPos = (startPos + endPos) / 2;
         Vector3 startTan = startPos + Vector3.right * 50;
         Vector3 endTan = endPos + Vector3.left * 50;
         Color shadowCol = new Color(0, 0, 0, 0.06f);
+        Vector3[] points = new Vector3[6];
 
         for (int i = 0; i < 3; i++)
         {
             // Draw a shadow
             Handles.DrawBezier(startPos, endPos, startTan, endTan, shadowCol, null, (i + 1) * 5);
-        }
+            Handles.color = new Color(0, 0, 0, 0.01f);
+            // Shadow for arrow
+            points[0] = endPos + new Vector3(1f + (i + 1), 0f, 0f);
+            points[1] = endPos + new Vector3(-10f - (i + 1), -5f - (i + 1), 0f);
+            points[2] = endPos + new Vector3(1f + (i + 1), 0f, 0f);
+            points[3] = endPos + new Vector3(-10f - (i + 1), 5f + (i + 1), 0f);
+            points[4] = endPos + new Vector3(-10f - (i + 1), -5f - (i + 1), 0f);
+            points[5] = endPos + new Vector3(-10f - (i + 1), 5f + (i + 1), 0f);
 
+            Handles.DrawAAConvexPolygon(points);
+        }
         Handles.DrawBezier(startPos, endPos, startTan, endTan, Color.black, null, 1);
+        Handles.color = Color.black;
+
+        // Draw arrow
+        points[0] = endPos;
+        points[1] = endPos + new Vector3(-10f, -5f, 0f);
+        points[2] = endPos;
+        points[3] = endPos + new Vector3(-10f, 5f, 0f);
+        points[4] = endPos + new Vector3(-10f, -5f, 0f);
+        points[5] = endPos + new Vector3(-10f, 5f, 0f);
+
+        Handles.DrawAAConvexPolygon(points);
     }
 
     // Between rectangle and vector3
@@ -939,13 +979,39 @@ public class NodeEditor : EditorWindow
         Vector3 endTan = endPos + Vector3.left * 50;
         Color shadowCol = new Color(0, 0, 0, 0.06f);
 
+        Vector3[] points = new Vector3[6];
+
         for (int i = 0; i < 3; i++)
         {
             // Draw a shadow
             Handles.DrawBezier(startPos, endPos, startTan, endTan, shadowCol, null, (i + 1) * 5);
+            Handles.color = new Color(0, 0, 0, 0.01f);
+            // Shadow for arrow
+            points[0] = endPos + new Vector3(1f + (i + 1), 0f, 0f);
+            points[1] = endPos + new Vector3(-10f - (i + 1), -5f - (i + 1), 0f);
+            points[2] = endPos + new Vector3(1f + (i + 1), 0f, 0f);
+            points[3] = endPos + new Vector3(-10f - (i + 1), 5f + (i + 1), 0f);
+            points[4] = endPos + new Vector3(-10f - (i + 1), -5f - (i + 1), 0f);
+            points[5] = endPos + new Vector3(-10f - (i + 1), 5f + (i + 1), 0f);
+
+            Handles.DrawAAConvexPolygon(points);
         }
 
+        // Draw shadow for arrow
+        //Handles.color = shadowCol;
+
         Handles.DrawBezier(startPos, endPos, startTan, endTan, Color.black, null, 1);
+
+        Handles.color = Color.black;
+        // Draw arrow
+        points[0] = endPos;
+        points[1] = endPos + new Vector3(-10f, -5f, 0f);
+        points[2] = endPos;
+        points[3] = endPos + new Vector3(-10f, 5f, 0f);
+        points[4] = endPos + new Vector3(-10f, -5f, 0f);
+        points[5] = endPos + new Vector3(-10f, 5f, 0f);
+
+        Handles.DrawAAConvexPolygon(points);
     }
 
 
