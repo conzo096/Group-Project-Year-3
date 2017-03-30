@@ -406,13 +406,13 @@ public class NodeEditor : EditorWindow
     static void Init()
     {
         NodeEditor window = (NodeEditor)GetWindow(typeof(NodeEditor));
-        //UDPPacketIO udp = new UDPPacketIO();
-        ////// Init the user datagram protocal.
-        ////// Can change the listen port for each different input?
-        //udp.init(window.RemoteIP, window.SendToPort, window.ListenerPort);
-        //window.handler = new Osc();
-        //window.handler.init(udp);
-        //window.handler.SetAllMessageHandler(window.AllMessageHandler);
+        UDPPacketIO udp = new UDPPacketIO();
+        //// Init the user datagram protocal.
+        //// Can change the listen port for each different input?
+        udp.init(window.RemoteIP, window.SendToPort, window.ListenerPort);
+        window.handler = new Osc();
+        window.handler.init(udp);
+        window.handler.SetAllMessageHandler(window.AllMessageHandler);
 
         window.Show();
 
