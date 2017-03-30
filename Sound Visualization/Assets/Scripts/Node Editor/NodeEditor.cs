@@ -6,7 +6,6 @@ using System.Reflection;
 /* TODO LIST.
  * Apply osc manager onto this script. (Is this done?)
  * Delete connections
- * Make sure when connecting nodes audio is on left side and visual on right side
  * Either multiple controller nodes, or one controller node supporting multiple gameobjects
  */
 
@@ -226,8 +225,6 @@ public class VisualNode : Node
                     // Update as vector
                     if (propertyInfo[i].PropertyType == typeof(Vector3))
                     {
-                        float theValue = (float)this.value;
-
                         // Cast
                         Vector3 vector3Value = (Vector3)propertyInfo[i].GetValue(compObj, null);
 
@@ -285,8 +282,6 @@ public class VisualNode : Node
                     // Update as vector
                     if (fieldInfo[i].FieldType == typeof(Vector3))
                     {
-                        float theValue = (float)this.value;
-                        
                         // Cast
                         Vector3 vector3Value = (Vector3)fieldInfo[i].GetValue(compObj);//new Vector3((float)this.value, (float)this.value, (float)this.value);
 
@@ -306,7 +301,7 @@ public class VisualNode : Node
                     else if (fieldInfo[i].FieldType == typeof(int))
                     {
                         // Cast
-                        int intValue = (int)this.value;
+                        int intValue = System.Convert.ToInt32(this.value);
                         // Set the value
                         fieldInfo[i].SetValue(compObj, intValue);
                     }
@@ -603,9 +598,13 @@ public class NodeEditor : EditorWindow
         // If windowsToAttach is full, add to connected nodes and reset.
         if (windowsToAttach.Count >= 2)
         {
-            // Add them to connection
-            attachedWindows.Add(windowsToAttach[0]);
-            attachedWindows.Add(windowsToAttach[1]);
+            // Will not connect visual to audio, or audio to audio
+            if (!(windows[windowsToAttach[1]] is AudioNode || windows[windowsToAttach[1]] is RandomGeneratorNode))
+            {
+                // Add them to connection
+                attachedWindows.Add(windowsToAttach[0]);
+                attachedWindows.Add(windowsToAttach[1]);
+            }
             // Reset windowsToAttach.
             windowsToAttach = new List<int>();
         }
@@ -731,7 +730,7 @@ public class NodeEditor : EditorWindow
         windows[id].nodeName = GUILayout.TextArea(windows[id].nodeName);
         MaxNode temp = (MaxNode)windows[id];
         windows[id].nodeName = GUILayout.TextArea(temp.inPort.ToString());
-        GUI.DragWindow(new Rect(0, 0, 100, 20));
+        GUI.DragWindow(new Rect(0, 0, windows[id].rectangle.width, 20));
     }
 
     // Draws the node window.
@@ -807,19 +806,13 @@ public class NodeEditor : EditorWindow
                         // For most components
                         foreach (PropertyInfo pi in component.GetType().GetProperties())
                         {
-                            object obj = component;
                             // Only use objects of type Vector3, float, int.
                             if (pi.PropertyType == typeof(Vector3) || pi.PropertyType == typeof(float) ||
                                 pi.PropertyType == typeof(int))
                             {
-
                                 // Add each property to list of properties
                                 if (!(propertyInfo.ContainsKey(pi)))
                                     propertyInfo.Add(pi, component);
-
-                                // Set up GUI on controller
-                                // GUILayout.Toggle(value, pi.Name);
-                                // GUILayout.TextField(pi.GetValue(obj, null).ToString());
                             }
                         }
 
@@ -830,14 +823,9 @@ public class NodeEditor : EditorWindow
                             if (fi.FieldType == typeof(Vector3) || fi.FieldType == typeof(float) ||
                                 fi.FieldType == typeof(int))
                             {
-                                Object obj = component;
-
                                 // Add each field to list of fields
                                 if (!(fieldInfo.ContainsKey(fi)))
                                     fieldInfo.Add(fi, component);
-                                // Set up GUI on controller
-                                // GUILayout.Toggle(value, fi.Name);
-                                // GUILayout.TextField(fi.GetValue(obj).ToString());
                             }
                         }
                     }
@@ -927,7 +915,7 @@ public class NodeEditor : EditorWindow
 
         }
        
-        GUI.DragWindow(new Rect(0, 0, 100, 20));
+        GUI.DragWindow(new Rect(0, 0, windows[id].rectangle.width, 20));
     }
 
     // Between 2 rectangles
@@ -935,7 +923,6 @@ public class NodeEditor : EditorWindow
     {
         Vector3 startPos = new Vector3(start.x + start.width, start.y + start.height / 2, 0);
         Vector3 endPos = new Vector3(end.x, end.y + end.height / 2, 0);
-        Vector3 midPos = (startPos + endPos) / 2;
         Vector3 startTan = startPos + Vector3.right * 50;
         Vector3 endTan = endPos + Vector3.left * 50;
         Color shadowCol = new Color(0, 0, 0, 0.06f);
