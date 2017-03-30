@@ -111,7 +111,7 @@ public class Osc
         }
         catch (Exception e)
         {
-            //Debug.Log("ThreadAbortException"+e);
+            Debug.Log("ThreadAbortException"+e);
         }
         finally
         {
