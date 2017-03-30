@@ -209,7 +209,6 @@ public class Container : MonoBehaviour
 
     private ComputeBuffer vertexEntryBuffer;
     private ComputeBuffer normalBuffer;
-    private int shaderKernel;
 
     public void Start()
     {
@@ -236,17 +235,7 @@ public class Container : MonoBehaviour
         else
         {
             NormalSolver.RecalculateNormals(mesh, editedMethod);
-
         }
-    }
-
-    private void instantiateNormalComputeShader()
-    {
-        this.shaderKernel = this.normalComputeShader.FindKernel("Calculate");
-        //this.normalBuffer = new ComputeBuffer(0, 0); // Pass in stuff
-        //this.normalBuffer.SetData(mesh.normals);
-        
-        //this.vertexEntryBuffer = new ComputeBuffer(1, sizeof(VertexEntry));
     }
 }
 

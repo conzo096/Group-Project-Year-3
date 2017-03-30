@@ -11,7 +11,6 @@ public class MetaballController : MonoBehaviour {
     // Number of metaballs
     public int metaballInstances;
 
-    private float rotationCount;
     // Use this for initialization
     void Start ()
     {
@@ -23,7 +22,6 @@ public class MetaballController : MonoBehaviour {
         GameObject center = Instantiate(metaballCenter) as GameObject;
         center.transform.parent = this.transform;
         center.transform.localPosition = new Vector3(0f, 0f, 0f);
-        rotationCount = 0;
         // Instantiate other metaballs
         for (int i = 0; i < metaballInstances; i++)
         {
