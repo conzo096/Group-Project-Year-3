@@ -14,10 +14,38 @@ using System;
 
 namespace Assets.Scripts.Node_Editor
 {
+    public class VisualObject
+    {
+        public string identifier;
+
+        public Dictionary<PropertyInfo, Component> propertyInfo = new Dictionary<PropertyInfo, Component>();
+        public Dictionary<FieldInfo, Component> fieldInfo = new Dictionary<FieldInfo, Component>();
+
+        public VisualObject(string identifier)
+        {
+            this.identifier = identifier;
+        }
+
+        // Override Equals operator
+        public override bool Equals(object other)
+        {
+            var item = other as VisualObject;
+          
+            return this.identifier.Equals(item.identifier);
+        }
+        
+        // Iverrude GetHashCode operator
+        public override int GetHashCode()
+        {
+            return identifier.GetHashCode();
+        }
+    }
 
     [Serializable]
     public class NodeEditor : EditorWindow
     {
+        public List<VisualObject> visualObjects = new List<VisualObject>();
+
         // Object field for controller node
         UnityEngine.Object fromObjectField = new UnityEngine.Object();
         Operators display = Operators.Multiply;
@@ -467,21 +495,32 @@ namespace Assets.Scripts.Node_Editor
                 ControllerNode temp = (ControllerNode)windows[id];
                 //temp.gameObjectTag = GUILayout.TextArea(temp.gameObjectTag);
                 // Disable GUI for object field
-                if (fromObjectField != null)
-                    GUI.enabled = false;
+                //if (fromObjectField != null)
+                //    GUI.enabled = false;
                 fromObjectField = EditorGUILayout.ObjectField(fromObjectField, typeof(UnityEngine.Object), true);
+                
+                
                 // Enable GUI for rest
-                if (fromObjectField != null)
-                    GUI.enabled = true;
+                //if (fromObjectField != null)
+                //    GUI.enabled = true;
                 // Link visual object to given visual node, only once
-                if (temp.visual == null)
-                {
+                //if (temp.visual == null)
+                //{
                     temp.visual = fromObjectField;
                     temp.Test();
-                }
+                    
+                //}
 
                 if (temp.visual != null)
                 {
+                    VisualObject vo = new VisualObject(fromObjectField.name);
+
+                    if (!visualObjects.Contains(vo))
+                    {
+                        visualObjects.Add(vo);
+                        //Debug.Log("adding vo");
+                    }
+
                     List<Component> keys = new List<Component>(temp.componentsDictionary.Keys);
                     foreach (Component component in keys)
                     {
@@ -495,31 +534,48 @@ namespace Assets.Scripts.Node_Editor
 
                         if (value)
                         {
-                            // For most components
-                            foreach (PropertyInfo pi in component.GetType().GetProperties())
-                            {
-                                // Only use objects of type Vector3, float, int.
-                                if (pi.PropertyType == typeof(Vector3) || pi.PropertyType == typeof(float) ||
-                                    pi.PropertyType == typeof(int))
+                            ////TODO: loop through all visualobjects and access their info (will possibly remove this)
+                            //foreach (VisualObject currentVisualObject in visualObjects)
+                            //{
+                                
+                                // For most components
+                                foreach (PropertyInfo pi in component.GetType().GetProperties())
                                 {
-                                    // Add each property to list of properties
-                                    if (!(propertyInfo.ContainsKey(pi)))
-                                        propertyInfo.Add(pi, component);
-                                }
-                            }
+                                    // Only use objects of type Vector3, float, int.
+                                    if (pi.PropertyType == typeof(Vector3) || pi.PropertyType == typeof(float) ||
+                                        pi.PropertyType == typeof(int))
+                                    {
+                                        // Add each property to list of properties
+                                        if ((propertyInfo.ContainsKey(pi)))
+                                            propertyInfo[pi] = component;
+                                        else
+                                            propertyInfo.Add(pi, component);
 
-                            // For scripts
-                            foreach (FieldInfo fi in component.GetType().GetFields())
-                            {
-                                // Only use objects of type Vector3, float, int.
-                                if (fi.FieldType == typeof(Vector3) || fi.FieldType == typeof(float) ||
-                                    fi.FieldType == typeof(int))
-                                {
-                                    // Add each field to list of fields
-                                    if (!(fieldInfo.ContainsKey(fi)))
-                                        fieldInfo.Add(fi, component);
+                                        //if (!(currentVisualObject.propertyInfo.ContainsKey(pi)))
+                                        //    currentVisualObject.propertyInfo.Add(pi, component);
+
+                                        //Debug.Log(currentVisualObject.propertyInfo);
+                                    }
                                 }
-                            }
+
+                                // For scripts
+                                foreach (FieldInfo fi in component.GetType().GetFields())
+                                {
+                                    // Only use objects of type Vector3, float, int.
+                                    if (fi.FieldType == typeof(Vector3) || fi.FieldType == typeof(float) ||
+                                        fi.FieldType == typeof(int))
+                                    {
+                                        // Add each field to list of fields
+                                        if (fieldInfo.ContainsKey(fi))
+                                            fieldInfo[fi] = component;
+                                        else
+                                            fieldInfo.Add(fi, component);
+
+                                        //if (!(currentVisualObject.fieldInfo.ContainsKey(fi)))
+                                        //    currentVisualObject.fieldInfo.Add(fi, component);
+                                    }
+                                }
+                            //}
                         }
                     }
                 }
