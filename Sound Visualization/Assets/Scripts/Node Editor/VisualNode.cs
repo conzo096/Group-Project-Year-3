@@ -1,16 +1,17 @@
 ﻿using UnityEngine;
-using UnityEditor;
 using System.Collections.Generic;
 using System.Reflection;
-// Visual node, interacts with components of a gameobject provided by the controller node.
+using System;
+
 namespace Assets.Scripts.Node_Editor
-{// Visual node, interacts with components of a gameobject provided by the controller node.
+{   // Visual node, interacts with components of a gameobject provided by the controller node.
+    [Serializable]
     public class VisualNode : Node
     {
         // Used to track down type of value
         public PropertyInfo propertyInfo;
         public FieldInfo fieldInfo;
-        public System.Object compObj;
+        public object compObj;
 
         // Tracks which properties of a Vector3 to change
         public bool[] Vectors = new bool[3];

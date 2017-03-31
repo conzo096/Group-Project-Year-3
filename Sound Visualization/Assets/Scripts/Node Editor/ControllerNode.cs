@@ -7,6 +7,7 @@ using UnityEngine;
 namespace Assets.Scripts.Node_Editor
 {
     // Controller node, used to create visual nodes based on a given gameobject
+    [Serializable]
     public class ControllerNode : Node
     {
         //public List<bool> componentsChecked = new List<bool>();
@@ -20,7 +21,7 @@ namespace Assets.Scripts.Node_Editor
             rectangle = r;
             //visual = GameObject.FindGameObjectWithTag(tag);
             //controller = visual.GetComponent<NoiseRingController>();
-            this.nodeName = name;
+           nodeName = name;
         }
 
         public void Test()

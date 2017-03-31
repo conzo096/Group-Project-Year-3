@@ -1,5 +1,5 @@
 ﻿using UnityEngine;
-
+using System;
 namespace Assets.Scripts.Node_Editor
 {
     public enum Operators
@@ -11,6 +11,7 @@ namespace Assets.Scripts.Node_Editor
         Power = 4
     }
     // Operator node, receives a value, modifies it and outputs it to other nodes.
+    [Serializable]
     public class OperatorNode : Node
     {
 

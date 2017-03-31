@@ -6,8 +6,10 @@ using UnityEngine;
 
 namespace Assets.Scripts.Node_Editor
 {
+
     // Base node class.
-    public abstract class Node
+    [Serializable]
+    public class Node
     {
         // Identifies this node.
         public int id;

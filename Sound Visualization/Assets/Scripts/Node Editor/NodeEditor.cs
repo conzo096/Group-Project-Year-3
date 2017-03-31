@@ -2,6 +2,8 @@
 using UnityEditor;
 using System.Collections.Generic;
 using System.Reflection;
+using System.IO;
+using System;
 
 /* TODO LIST.
  *
@@ -12,45 +14,55 @@ using System.Reflection;
 
 namespace Assets.Scripts.Node_Editor
 {
+
+    [Serializable]
     public class NodeEditor : EditorWindow
     {
         // Object field for controller node
-        Object fromObjectField = new Object();
+        UnityEngine.Object fromObjectField = new UnityEngine.Object();
         Operators display = Operators.Multiply;
         //OSC variables
         public string RemoteIP = /*"146.176.164.4";*/ "127.0f.0.1f"; // signifies a local host (if testing locally
         public int SendToPort = 9000; //the port you will be sending from
         public int ListenerPort = 8050; //the port you will be listening on
         private Osc handler; // Handles listening to max messages.
-                             // Id for the node.
-        static private int uniqueNodeId = 0;
-
+        // Id for the node.
+        private int uniqueNodeId = 0;
         // List of properties from components
+        [NonSerialized]
         Dictionary<PropertyInfo, Component> propertyInfo = new Dictionary<PropertyInfo, Component>();
-
+        [NonSerialized]
         // List of members from components
         Dictionary<FieldInfo, Component> fieldInfo = new Dictionary<FieldInfo, Component>();
-
         // List of rectangle nodes.
         List<Node> windows = new List<Node>();
-
         // Temp List which holds which two nodes are to be connected.
         List<int> windowsToAttach = new List<int>();
-
         // IDS of connected nodes.
         List<int> attachedWindows = new List<int>();
+
+        // Constructors.
+        NodeEditor() { }
+
+        NodeEditor(NodeManager copy)
+        {
+            uniqueNodeId = copy.uniqueNodeId;
+            windows = copy.windows;
+            windowsToAttach = copy.windowsToAttach;
+            attachedWindows = copy.attachedWindows;
+        }
 
         [MenuItem("Window/Node Editor")]
         static void Init()
         {
             NodeEditor window = (NodeEditor)GetWindow(typeof(NodeEditor));
-            UDPPacketIO udp = new UDPPacketIO();
-            //// Init the user datagram protocal.
-            //// Can change the listen port for each different input?
-            udp.init(window.RemoteIP, window.SendToPort, window.ListenerPort);
-            window.handler = new Osc();
-            window.handler.init(udp);
-            window.handler.SetAllMessageHandler(window.AllMessageHandler);
+            //UDPPacketIO udp = new UDPPacketIO();
+            ////// Init the user datagram protocal.
+            ////// Can change the listen port for each different input?
+            //udp.init(window.RemoteIP, window.SendToPort, window.ListenerPort);
+            //window.handler = new Osc();
+            //window.handler.init(udp);
+            //window.handler.SetAllMessageHandler(window.AllMessageHandler);
 
             window.Show();
 
@@ -102,6 +114,7 @@ namespace Assets.Scripts.Node_Editor
                 case "Operator":
                     windows.Add(new OperatorNode(new Rect(mousePos.x, mousePos.y, 200, 150), "Operator", uniqueNodeId));
                     uniqueNodeId++;
+                                   
                     break;
                 default:
                     // Do this for all of components other than scripts
@@ -173,6 +186,18 @@ namespace Assets.Scripts.Node_Editor
 
         }
 
+
+        void StartMaxMsp(object obj)
+        {
+            //UDPPacketIO udp = new UDPPacketIO();
+            ////// Init the user datagram protocal.
+            ////// Can change the listen port for each different input?
+            //udp.init(window.RemoteIP, window.SendToPort, window.ListenerPort);
+            //window.handler = new Osc();
+            //window.handler.init(udp);
+            //window.handler.SetAllMessageHandler(window.AllMessageHandler);
+
+        }
         void Update()
         {
             // For each window
@@ -320,7 +345,10 @@ namespace Assets.Scripts.Node_Editor
                 menu.AddItem(new GUIContent("AudioNodes/Pitch"), false, Callback, "Pitch");
                 menu.AddItem(new GUIContent("AudioNodes/Volume"), false, Callback, "Volume");
                 menu.AddItem(new GUIContent("AudioNodes/GenericAudio"), false, Callback, "GenericAudio");
-                //   menu.AddSeparator("");
+                menu.AddSeparator("");
+                menu.AddItem(new GUIContent("File/Save"), false, SaveWindow, "Save");
+                menu.AddItem(new GUIContent("File/Load"), false, LoadWindow, "Load");
+                menu.AddItem(new GUIContent("File/StartMaxMSP"), false, StartMaxMsp, "Start Max");
                 //   menu.AddItem(new GUIContent("MaxMSP/MaxMSP"), false, Callback, "MaxNode");
 
                 // What does this part do?
@@ -441,7 +469,7 @@ namespace Assets.Scripts.Node_Editor
                 // Disable GUI for object field
                 if (fromObjectField != null)
                     GUI.enabled = false;
-                fromObjectField = EditorGUILayout.ObjectField(fromObjectField, typeof(Object), true);
+                fromObjectField = EditorGUILayout.ObjectField(fromObjectField, typeof(UnityEngine.Object), true);
                 // Enable GUI for rest
                 if (fromObjectField != null)
                     GUI.enabled = true;
@@ -663,7 +691,6 @@ namespace Assets.Scripts.Node_Editor
         }
 
 
-        // msgAddress is a poor variable name. It is actually what musical parameter (e.g. pitch, frequency etc)
         public void AllMessageHandler(OscMessage oscMessage)
         {
             //Debug.Log(oscMessage.Address);
@@ -689,6 +716,32 @@ namespace Assets.Scripts.Node_Editor
 
                 }
             }
+        }
+
+
+        // Serialize nodes and save to file - Add option to what file later.
+        public void SaveWindow(object obj)
+        {
+            NodeManager saveData = new NodeManager();
+            saveData.attachedWindows = attachedWindows;
+            saveData.uniqueNodeId = uniqueNodeId;
+            saveData.windows = windows;
+            saveData.windowsToAttach = windowsToAttach;
+
+            Debug.Log(saveData.windows.Count);
+            string json = JsonUtility.ToJson(saveData);
+            File.WriteAllText("NodeJson.txt", json);
+        }
+
+        // Load serialized file - Add option what file later.
+        public void LoadWindow(object obj)
+        {
+            string text = File.ReadAllText("NodeJson.txt");
+            NodeManager load = JsonUtility.FromJson<NodeManager>(text);
+            attachedWindows = load.attachedWindows;
+            uniqueNodeId = load.uniqueNodeId;
+            windows = load.windows;
+            windowsToAttach = load.windowsToAttach;
         }
     }
 }
