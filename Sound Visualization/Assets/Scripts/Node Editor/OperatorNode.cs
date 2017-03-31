@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 using System;
-namespace Assets.Scripts.Node_Editor
+namespace NodeEditor
 {
     public enum Operators
     {
@@ -24,6 +24,11 @@ namespace Assets.Scripts.Node_Editor
             this.nodeName = name;
             id = index;
         }
+
+        public OperatorNode()
+        {
+        }
+
         public void CalculateOutput()
         {
             if (this.value != null)

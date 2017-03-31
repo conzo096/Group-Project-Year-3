@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 
-namespace Assets.Scripts.Node_Editor
+namespace NodeEditor
 {
 
     // Base node class.
@@ -19,6 +19,7 @@ namespace Assets.Scripts.Node_Editor
         public string nodeName;
         // Value that is being passed through system.
         public object value;
+        
         // Constructors. FIX CHAINING
         public Node()
         {

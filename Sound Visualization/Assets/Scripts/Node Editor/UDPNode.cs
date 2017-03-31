@@ -1,7 +1,7 @@
 ﻿using System;
 using UnityEngine;
 
-namespace Assets.Scripts.Node_Editor
+namespace NodeEditor
 {
     [Serializable]
     public class MaxNode : Node

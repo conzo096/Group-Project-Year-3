@@ -12,7 +12,7 @@ using System;
  */
 
 
-namespace Assets.Scripts.Node_Editor
+namespace NodeEditor
 {
     public class VisualObject
     {
@@ -778,25 +778,84 @@ namespace Assets.Scripts.Node_Editor
         // Serialize nodes and save to file - Add option to what file later.
         public void SaveWindow(object obj)
         {
+            // Create manager class which stores neccessary data.
             NodeManager saveData = new NodeManager();
             saveData.attachedWindows = attachedWindows;
             saveData.uniqueNodeId = uniqueNodeId;
             saveData.windows = windows;
             saveData.windowsToAttach = windowsToAttach;
-
-            Debug.Log(saveData.windows.Count);
+            List<string> listTypes = new List<string>();
+            for (int i = 0; i < windows.Count; i++)
+            {
+                Debug.Log(windows[i].GetType().ToString());
+                listTypes.Add(windows[i].GetType().ToString());
+            }
+            saveData.listTypes = listTypes;
+            // Create json string.
             string json = JsonUtility.ToJson(saveData);
+            // Write json to file
             File.WriteAllText("NodeJson.txt", json);
         }
 
         // Load serialized file - Add option what file later.
         public void LoadWindow(object obj)
         {
+            // Read json string from file.
             string text = File.ReadAllText("NodeJson.txt");
+            // Update editor with data from file.
             NodeManager load = JsonUtility.FromJson<NodeManager>(text);
+            
             attachedWindows = load.attachedWindows;
             uniqueNodeId = load.uniqueNodeId;
-            windows = load.windows;
+            windows.Clear();
+            windowsToAttach.Clear();
+            attachedWindows.Clear();
+
+          
+            for (int i = 0; i < load.windows.Count; i++)
+            {
+                Node temp = new Node();
+                temp = load.windows[i];
+                if (load.listTypes[i] == "NodeEditor.AudioNode")
+                {
+                    AudioNode conversion = new AudioNode();
+                    conversion = temp as AudioNode;//(AudioNode)temp;
+                    windows.Add(conversion);
+                }
+                if (load.listTypes[i] == "NodeEditor.VisualNode")
+                {
+                    VisualNode conversion = new VisualNode();
+                    conversion = temp as VisualNode;//(VisualNode)temp;
+                    windows.Add(conversion);
+                }
+                if (load.listTypes[i] == "NodeEditor.OperatorNode")
+                {
+                    OperatorNode conversion = new OperatorNode();
+                    conversion = temp as OperatorNode;//(OperatorNode)temp;
+                    Debug.Log("DD"+conversion);
+                    windows.Add(conversion);
+                }
+                if (load.listTypes[i] == "NodeEditor.RandomGeneratorNode")
+                {
+                    RandomGeneratorNode conversion = new RandomGeneratorNode();
+                    conversion = temp as RandomGeneratorNode;//(RandomGeneratorNode)temp;
+                    windows.Add(conversion);
+                }
+                if (load.listTypes[i] == "NodeEditor.MaxNode")
+                {
+                    MaxNode conversion = new MaxNode();
+                    conversion = temp as MaxNode;//(MaxNode)temp;
+                    windows.Add(conversion);
+                }
+                if (load.listTypes[i] == "NodeEditor.ControllerNode")
+                {
+                    ControllerNode conversion = new ControllerNode();
+                    conversion = temp as ControllerNode;//(ControllerNode)temp;
+                    windows.Add(conversion);
+                }
+            }
+            for (int i = 0; i < windows.Count; i++)
+                Debug.Log(windows[i].GetType());
             windowsToAttach = load.windowsToAttach;
         }
     }
