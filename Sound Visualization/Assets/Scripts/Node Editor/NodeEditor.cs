@@ -14,32 +14,6 @@ using System;
 
 namespace NodeEditor
 {
-    public class VisualObject
-    {
-        public string identifier;
-
-        public Dictionary<PropertyInfo, Component> propertyInfo = new Dictionary<PropertyInfo, Component>();
-        public Dictionary<FieldInfo, Component> fieldInfo = new Dictionary<FieldInfo, Component>();
-
-        public VisualObject(string identifier)
-        {
-            this.identifier = identifier;
-        }
-
-        // Override Equals operator
-        public override bool Equals(object other)
-        {
-            var item = other as VisualObject;
-          
-            return this.identifier.Equals(item.identifier);
-        }
-        
-        // Iverrude GetHashCode operator
-        public override int GetHashCode()
-        {
-            return identifier.GetHashCode();
-        }
-    }
 
     [Serializable]
     public class NodeEditor : EditorWindow
@@ -142,7 +116,10 @@ namespace NodeEditor
                 case "Operator":
                     windows.Add(new OperatorNode(new Rect(mousePos.x, mousePos.y, 200, 150), "Operator", uniqueNodeId));
                     uniqueNodeId++;
-                                   
+                    break;
+                case "Material":
+                    windows.Add(new MaterialNode(new Rect(mousePos.x, mousePos.y, 100, 150), "Material", uniqueNodeId));
+                    uniqueNodeId++;
                     break;
                 default:
                     // Do this for all of components other than scripts
@@ -262,7 +239,29 @@ namespace NodeEditor
                 {
                     RandomGeneratorNode temp = (RandomGeneratorNode)windows[i];
                     temp.UpdateValues();
+                }
 
+
+                // Update material nodes
+                if (windows[i] is MaterialNode)
+                {
+                    MaterialNode temp = (MaterialNode)windows[i];
+
+                    List<Component> components = new List<Component>(propertyInfo.Values);
+                    // Loop through all components
+                    foreach (Component currentComponent in components)
+                    {
+                        Debug.Log("trying to find renderer");
+                        // Find the renderer to reference the material
+                        if (currentComponent.GetType() == typeof(MeshRenderer))
+                        {
+                            Debug.Log("Found renderer");
+                            MeshRenderer rendererComponent = (MeshRenderer)currentComponent;
+                            temp.material = rendererComponent.sharedMaterial;
+                        }
+                    }
+                    // Make the material node pass its value to the material
+                    temp.PassValueToMaterial();
                 }
 
             }
@@ -385,6 +384,13 @@ namespace NodeEditor
                 foreach (PropertyInfo currentPi in pi)
                 {
                     menu.AddItem(new GUIContent("VisualNodes/" + currentPi.DeclaringType + "/" + currentPi.Name), false, Callback, currentPi.Name);
+
+                    // Special check for Renderer
+                    if (currentPi.DeclaringType == typeof(Renderer))
+                    {
+                        menu.AddItem(new GUIContent("VisualNodes/" + currentPi.DeclaringType + "/Material"), false, Callback, "Material");
+
+                    }
                 }
 
                 List<FieldInfo> fi = new List<FieldInfo>(fieldInfo.Keys);
@@ -498,17 +504,17 @@ namespace NodeEditor
                 //if (fromObjectField != null)
                 //    GUI.enabled = false;
                 fromObjectField = EditorGUILayout.ObjectField(fromObjectField, typeof(UnityEngine.Object), true);
-                
-                
+
+
                 // Enable GUI for rest
                 //if (fromObjectField != null)
                 //    GUI.enabled = true;
                 // Link visual object to given visual node, only once
                 //if (temp.visual == null)
                 //{
-                    temp.visual = fromObjectField;
-                    temp.Test();
-                    
+                temp.visual = fromObjectField;
+                temp.Test();
+
                 //}
 
                 if (temp.visual != null)
@@ -537,44 +543,44 @@ namespace NodeEditor
                             ////TODO: loop through all visualobjects and access their info (will possibly remove this)
                             //foreach (VisualObject currentVisualObject in visualObjects)
                             //{
-                                
-                                // For most components
-                                foreach (PropertyInfo pi in component.GetType().GetProperties())
+
+                            // For most components
+                            foreach (PropertyInfo pi in component.GetType().GetProperties())
+                            {
+                                // Only use objects of type Vector3, float, int.
+                                if (pi.PropertyType == typeof(Vector3) || pi.PropertyType == typeof(float) ||
+                                    pi.PropertyType == typeof(int))
                                 {
-                                    // Only use objects of type Vector3, float, int.
-                                    if (pi.PropertyType == typeof(Vector3) || pi.PropertyType == typeof(float) ||
-                                        pi.PropertyType == typeof(int))
-                                    {
-                                        // Add each property to list of properties
-                                        if ((propertyInfo.ContainsKey(pi)))
-                                            propertyInfo[pi] = component;
-                                        else
-                                            propertyInfo.Add(pi, component);
+                                    // Add each property to list of properties
+                                    if ((propertyInfo.ContainsKey(pi)))
+                                        propertyInfo[pi] = component;
+                                    else
+                                        propertyInfo.Add(pi, component);
 
-                                        //if (!(currentVisualObject.propertyInfo.ContainsKey(pi)))
-                                        //    currentVisualObject.propertyInfo.Add(pi, component);
+                                    //if (!(currentVisualObject.propertyInfo.ContainsKey(pi)))
+                                    //    currentVisualObject.propertyInfo.Add(pi, component);
 
-                                        //Debug.Log(currentVisualObject.propertyInfo);
-                                    }
+                                    //Debug.Log(currentVisualObject.propertyInfo);
                                 }
+                            }
 
-                                // For scripts
-                                foreach (FieldInfo fi in component.GetType().GetFields())
+                            // For scripts
+                            foreach (FieldInfo fi in component.GetType().GetFields())
+                            {
+                                // Only use objects of type Vector3, float, int.
+                                if (fi.FieldType == typeof(Vector3) || fi.FieldType == typeof(float) ||
+                                    fi.FieldType == typeof(int))
                                 {
-                                    // Only use objects of type Vector3, float, int.
-                                    if (fi.FieldType == typeof(Vector3) || fi.FieldType == typeof(float) ||
-                                        fi.FieldType == typeof(int))
-                                    {
-                                        // Add each field to list of fields
-                                        if (fieldInfo.ContainsKey(fi))
-                                            fieldInfo[fi] = component;
-                                        else
-                                            fieldInfo.Add(fi, component);
+                                    // Add each field to list of fields
+                                    if (fieldInfo.ContainsKey(fi))
+                                        fieldInfo[fi] = component;
+                                    else
+                                        fieldInfo.Add(fi, component);
 
-                                        //if (!(currentVisualObject.fieldInfo.ContainsKey(fi)))
-                                        //    currentVisualObject.fieldInfo.Add(fi, component);
-                                    }
+                                    //if (!(currentVisualObject.fieldInfo.ContainsKey(fi)))
+                                    //    currentVisualObject.fieldInfo.Add(fi, component);
                                 }
+                            }
                             //}
                         }
                     }
@@ -658,6 +664,12 @@ namespace NodeEditor
                 // Show output
                 EditorGUILayout.FloatField("Output:", temp.output);
 
+            }
+            else if (windows[id] is MaterialNode)
+            {
+                MaterialNode temp = (MaterialNode)windows[id];
+
+                temp.methodToSearch = EditorGUILayout.TextField(temp.methodToSearch);
             }
             // Area of rect to drag (initial, inital, width,height);
             GUI.DragWindow(new Rect(0, 0, windows[id].rectangle.width, 20));
