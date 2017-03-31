@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using System;
 
-namespace Assets.Scripts.Node_Editor
+namespace NodeEditor
 {   // Visual node, interacts with components of a gameobject provided by the controller node.
     [Serializable]
     public class VisualNode : Node
@@ -22,6 +22,10 @@ namespace Assets.Scripts.Node_Editor
             this.nodeName = name;
             id = index;
             //this.value = value;
+        }
+
+        public VisualNode()
+        {
         }
 
         // Updates the variables of a component

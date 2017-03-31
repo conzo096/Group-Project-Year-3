@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 
-namespace Assets.Scripts.Node_Editor
+namespace NodeEditor
 {
     // Controller node, used to create visual nodes based on a given gameobject
     [Serializable]
@@ -22,6 +22,10 @@ namespace Assets.Scripts.Node_Editor
             //visual = GameObject.FindGameObjectWithTag(tag);
             //controller = visual.GetComponent<NoiseRingController>();
            nodeName = name;
+        }
+
+        public ControllerNode()
+        {
         }
 
         public void Test()
