@@ -19,6 +19,7 @@ namespace NodeEditor
         public ControllerNode(Rect r, string name, int index)
         {
             rectangle = r;
+            id = index;
             //visual = GameObject.FindGameObjectWithTag(tag);
             //controller = visual.GetComponent<NoiseRingController>();
            nodeName = name;

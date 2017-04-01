@@ -251,11 +251,11 @@ namespace NodeEditor
                     // Loop through all components
                     foreach (Component currentComponent in components)
                     {
-                        Debug.Log("trying to find renderer");
+                        // Debug.Log("trying to find renderer");
                         // Find the renderer to reference the material
                         if (currentComponent.GetType() == typeof(MeshRenderer))
                         {
-                            Debug.Log("Found renderer");
+                            // Debug.Log("Found renderer");
                             MeshRenderer rendererComponent = (MeshRenderer)currentComponent;
                             temp.material = rendererComponent.sharedMaterial;
                         }
