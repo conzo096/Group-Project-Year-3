@@ -10,8 +10,8 @@ namespace NodeEditor
     public class NodeManager
     {
         // Object field for controller node
-        object fromObjectField = new object();
-        Operators display = Operators.Multiply;
+        //object fromObjectField = new object();
+        //Operators display = Operators.Multiply;
         public int uniqueNodeId = 0;
         // List of rectangle nodes.
         public List<Node> windows = new List<Node>();
@@ -19,8 +19,5 @@ namespace NodeEditor
         public List<int> windowsToAttach = new List<int>();
         // IDS of connected nodes.
         public List<int> attachedWindows = new List<int>();
-        // Types of each node
-        public List<string> listTypes = new List<string>();
-
     }
 }

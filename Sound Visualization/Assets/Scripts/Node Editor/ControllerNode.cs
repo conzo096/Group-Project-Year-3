@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using UnityEngine;
 
 namespace NodeEditor
@@ -22,7 +20,8 @@ namespace NodeEditor
             id = index;
             //visual = GameObject.FindGameObjectWithTag(tag);
             //controller = visual.GetComponent<NoiseRingController>();
-           nodeName = name;
+            nodeName = name;
+            id = index;
         }
 
         public ControllerNode()

@@ -9,7 +9,7 @@ namespace NodeEditor
 
     // Base node class.
     [Serializable]
-    public class Node
+    public abstract class Node : UnityEngine.Object
     {
         // Identifies this node.
         public int id;
