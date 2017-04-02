@@ -379,6 +379,7 @@ namespace NodeEditor
                         menu.AddItem(new GUIContent("Delete"), false, Callback, "Delete:" + windows[i].id);
                         menu.AddSeparator("");
                     }
+                   
                 }
                 // If right click was pressed, stop trying to create a connection
                 windowsToAttach.Clear();
@@ -435,11 +436,13 @@ namespace NodeEditor
             // For each window, draw window.
             for (int i = 0; i < windows.Count; i++)
             {
-                windows[i].rectangle = HorizResizer(windows[i].rectangle); //right
-                windows[i].rectangle = HorizResizer(windows[i].rectangle, false); //left
-                windows[i].rectangle = VertResizer(windows[i].rectangle); //Up
-                windows[i].rectangle = VertResizer(windows[i].rectangle, false); //down
-
+                if (windows[i].rectangle.Contains(mousePos))
+                {
+                    windows[i].rectangle = HorizResizer(windows[i].rectangle); //right
+                    windows[i].rectangle = HorizResizer(windows[i].rectangle, false); //left
+                    windows[i].rectangle = VertResizer(windows[i].rectangle); //Up
+                    windows[i].rectangle = VertResizer(windows[i].rectangle, false); //down
+                }
 
                 if (windows[i] is AudioNode)
                 {
@@ -809,9 +812,6 @@ namespace NodeEditor
             Handles.DrawAAConvexPolygon(points);
         }
 
-
-
-
         private Rect HorizResizer(Rect window, bool right = true, float detectionRange = 8f)
         {
             detectionRange *= 0.5f;
@@ -898,7 +898,7 @@ namespace NodeEditor
             {
                 if (up == !draggingUp)
                 {
-                    window.width = current.mousePosition.y + current.delta.y;
+                    window.height = current.mousePosition.y + current.delta.y;
                     Repaint();
                     draggingUp = true;
                 }
