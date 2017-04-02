@@ -8,7 +8,8 @@ using Newtonsoft.Json;
 
 /* TODO LIST.
  *
- * Delete nodes, delete connections.
+ * Save nodes/ Load nodes.
+ * Resize nodes.
  *
  */
 
@@ -44,6 +45,10 @@ namespace NodeEditor
         List<int> windowsToAttach = new List<int>();
         // IDS of connected nodes.
         List<int> attachedWindows = new List<int>();
+        bool draggingLeft = false;
+        bool draggingRight = false;
+        bool draggingUp = false;
+        bool draggingDown = false;
 
         // Constructors.
         NodeEditor() { }
@@ -75,11 +80,17 @@ namespace NodeEditor
         // called when a right-click option is selected.
         void Callback(object obj)
         {
-            //Event currentEvent = Event.current;
-            // Debug.Log(currentEvent.mousePosition);
-            Vector2 mousePos;// = currentEvent.mousePosition;
-            mousePos = new Vector2(10, 10);
-            string nodeRequested = obj.ToString();
+            Vector2 mousePos = new Vector2(10, 10);
+            string nodeRequested = "init";
+            if (obj is CallBackObject)
+            {
+                CallBackObject temp = obj as CallBackObject;
+                mousePos = temp.mousePosition;
+                nodeRequested = temp.callBackName;
+            }
+            else
+                nodeRequested = obj.ToString();
+            
             switch (nodeRequested)
             {
                 /*
@@ -153,46 +164,56 @@ namespace NodeEditor
                     break;
             }
 
+            if (nodeRequested == "DeleteAll")
+            {
+                attachedWindows = new List<int>();
+                windows = new List<Node>();
+                uniqueNodeId = 0;
+            }
             // If node is requested to be deleted, find it and remove.
-            if (nodeRequested.Contains("Delete"))
+
+            else if (nodeRequested.Contains("Delete"))
             {
                 // Split string into two components.
                 string[] values = nodeRequested.Split(':');
                 // node index for windows is the second part of the array.
                 int index = int.Parse(values[1]);
-                // Next step. Find connections to node and remove them.
+                DeleteNode(index);
 
-                // iterate backwards.
-                for (int i = attachedWindows.Count - 1; i >= 0; i--)
+            }
+        }
+
+        // Deletes a node
+        void DeleteNode(int index)
+        {
+            // iterate backwards.
+            for (int i = attachedWindows.Count - 1; i >= 0; i--)
+            {
+                // if the index value matches id in attachedWindows...
+                // Remove it and the one it is connected too.
+                if (attachedWindows[i] == index)
                 {
-                    // if the index value matches id in attachedWindows...
-                    // Remove it and the one it is connected too.
-                    if (attachedWindows[i] == index)
+                    attachedWindows.RemoveAt(i);
+                    if (i % 2 == 0)
                     {
                         attachedWindows.RemoveAt(i);
-                        if (i % 2 == 0)
-                        {
-                            attachedWindows.RemoveAt(i);
-                        }
-                        else
-                        {
-                            attachedWindows.RemoveAt(i - 1);
-                            i--;
-                        }
                     }
-                }
-                // Remove node at location.
-                for (int i = windows.Count - 1; i >= 0; i--)
-                {
-                    if (windows[i].id == index)
+                    else
                     {
-                        windows.RemoveAt(i);
+                        attachedWindows.RemoveAt(i - 1);
+                        i--;
                     }
                 }
             }
-
+            // Remove node at location.
+            for (int i = windows.Count - 1; i >= 0; i--)
+            {
+                if (windows[i].id == index)
+                {
+                    windows.RemoveAt(i);
+                }
+            }
         }
-
 
         void StartMaxMsp(object obj)
         {
@@ -363,21 +384,22 @@ namespace NodeEditor
                 windowsToAttach.Clear();
 
                 // Now create the menu, add items and show it
-                menu.AddItem(new GUIContent("ControllerNode"), false, Callback, "ControllerNode");
+                menu.AddItem(new GUIContent("ControllerNode"), false, Callback, new CallBackObject("ControllerNode",mousePos));
                 menu.AddSeparator("");
                 //menu.AddItem(new GUIContent("VisualNodes/"), false, Callback, "V");
                 //menu.AddSeparator("");
-                menu.AddItem(new GUIContent("Operator"), false, Callback, "Operator");
+                menu.AddItem(new GUIContent("Operator"), false, Callback, new CallBackObject("Operator",mousePos));
                 menu.AddSeparator("");
-                menu.AddItem(new GUIContent("AudioNodes/Random"), false, Callback, "Random");
-                menu.AddItem(new GUIContent("AudioNodes/Amplitude"), false, Callback, "Amplitude");
-                menu.AddItem(new GUIContent("AudioNodes/Pitch"), false, Callback, "Pitch");
-                menu.AddItem(new GUIContent("AudioNodes/Volume"), false, Callback, "Volume");
-                menu.AddItem(new GUIContent("AudioNodes/GenericAudio"), false, Callback, "GenericAudio");
+                menu.AddItem(new GUIContent("AudioNodes/Random"), false, Callback, new CallBackObject("Random",mousePos));
+                menu.AddItem(new GUIContent("AudioNodes/Amplitude"), false, Callback, new CallBackObject("Amplitude",mousePos));
+                menu.AddItem(new GUIContent("AudioNodes/Pitch"), false, Callback, new CallBackObject("Pitch",mousePos));
+                menu.AddItem(new GUIContent("AudioNodes/Volume"), false, Callback, new CallBackObject("Volume",mousePos));
+                menu.AddItem(new GUIContent("AudioNodes/GenericAudio"), false, Callback, new CallBackObject("GenericAudio",mousePos));
                 menu.AddSeparator("");
                 menu.AddItem(new GUIContent("File/Save"), false, SaveWindow, "Save");
                 menu.AddItem(new GUIContent("File/Load"), false, LoadWindow, "Load");
                 menu.AddItem(new GUIContent("File/StartMaxMSP"), false, StartMaxMsp, "Start Max");
+                menu.AddItem(new GUIContent("File/DeleteAll"), false, Callback, "DeleteAll");
                 //   menu.AddItem(new GUIContent("MaxMSP/MaxMSP"), false, Callback, "MaxNode");
 
                 // What does this part do?
@@ -413,6 +435,12 @@ namespace NodeEditor
             // For each window, draw window.
             for (int i = 0; i < windows.Count; i++)
             {
+                windows[i].rectangle = HorizResizer(windows[i].rectangle); //right
+                windows[i].rectangle = HorizResizer(windows[i].rectangle, false); //left
+                windows[i].rectangle = VertResizer(windows[i].rectangle); //Up
+                windows[i].rectangle = VertResizer(windows[i].rectangle, false); //down
+
+
                 if (windows[i] is AudioNode)
                 {
                     string displayName = windows[i].nodeName + " (Audio)";
@@ -782,6 +810,111 @@ namespace NodeEditor
         }
 
 
+
+
+        private Rect HorizResizer(Rect window, bool right = true, float detectionRange = 8f)
+        {
+            detectionRange *= 0.5f;
+            Rect resizer = window;
+
+            if (right)
+            {
+                resizer.xMin = resizer.xMax - detectionRange;
+                resizer.xMax += detectionRange;
+            }
+            else
+            {
+                resizer.xMax = resizer.xMin + detectionRange;
+                resizer.xMin -= detectionRange;
+            }
+            Event current = Event.current;
+            EditorGUIUtility.AddCursorRect(resizer, MouseCursor.ResizeHorizontal);
+
+            // if mouse is no longer dragging, stop tracking direction of drag
+            if (current.type == EventType.MouseUp)
+            {
+                draggingLeft = false;
+                draggingRight = false;
+            }
+
+            // resize window if mouse is being dragged within resizor bounds
+            if (current.mousePosition.x > resizer.xMin &&
+                current.mousePosition.x < resizer.xMax &&
+                current.type == EventType.MouseDrag &&
+                current.button == 0 ||
+                draggingLeft ||
+                draggingRight)
+            {
+                if (right == !draggingLeft)
+                {
+                    window.width = current.mousePosition.x + current.delta.x;
+                    Repaint();
+                    draggingRight = true;
+                }
+                else if (!right == !draggingRight)
+                {
+                    window.width = window.width - (current.mousePosition.x + current.delta.x);
+                    Repaint();
+                    draggingLeft = true;
+                }
+
+            }
+
+            return window;
+        }
+        private Rect VertResizer(Rect window, bool up = true, float detectionRange = 8f)
+        {
+            detectionRange *= 0.5f;
+            Rect resizer = window;
+
+            if (up)
+            {
+                resizer.yMin = resizer.yMax - detectionRange;
+                resizer.yMax += detectionRange;
+            }
+            else
+            {
+                resizer.yMax = resizer.yMin + detectionRange;
+                resizer.yMin -= detectionRange;
+            }
+
+            Event current = Event.current;
+            EditorGUIUtility.AddCursorRect(resizer, MouseCursor.ResizeVertical);
+
+            // if mouse is no longer dragging, stop tracking direction of drag
+            if (current.type == EventType.MouseUp)
+            {
+                draggingUp = false;
+                draggingDown = false;
+            }
+
+            // resize window if mouse is being dragged within resizor bounds
+            if (current.mousePosition.y > resizer.yMin &&
+                current.mousePosition.y < resizer.yMax &&
+                current.type == EventType.MouseDrag &&
+                current.button == 0 ||
+                draggingUp ||
+                draggingDown)
+            {
+                if (up == !draggingUp)
+                {
+                    window.width = current.mousePosition.y + current.delta.y;
+                    Repaint();
+                    draggingUp = true;
+                }
+                else if (!up == !draggingDown)
+                {
+                    window.height = window.height - (current.mousePosition.y + current.delta.y);
+                    Repaint();
+                    draggingDown = true;
+                }
+
+            }
+
+            return window;
+        }
+
+        // This handles the incoming max messages and sends it to the correct audio node.
         public void AllMessageHandler(OscMessage oscMessage)
         {
             //Debug.Log(oscMessage.Address);
@@ -829,8 +962,10 @@ namespace NodeEditor
             //string json = JsonUtility.ToJson(saveData);
             // Not safe.
             File.WriteAllText("SaveTest", json);
+
             Debug.Log("File saved");
         }
+
 
         // Load serialized file - Add option what file later.
         public void LoadWindow(object obj)

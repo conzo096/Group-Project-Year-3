@@ -7,6 +7,7 @@ using System.Text;
 namespace NodeEditor
 {
     // purpose of this class to hold hold all the data for it to be serialized.
+    
     public class NodeManager
     {
         // Object field for controller node
