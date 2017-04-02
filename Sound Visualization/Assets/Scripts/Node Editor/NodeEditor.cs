@@ -15,6 +15,7 @@ using Newtonsoft.Json;
 
 namespace NodeEditor
 {
+    
 
     [Serializable]
     public class NodeEditor : EditorWindow
@@ -33,7 +34,7 @@ namespace NodeEditor
         private int uniqueNodeId = 0;
         // List of properties from components
         [NonSerialized]
-        Dictionary<PropertyInfo, Component> propertyInfo = new Dictionary<PropertyInfo, Component>();
+        Dictionary<CustomPropertyInfo, Component> propertyInfo = new Dictionary<CustomPropertyInfo, Component>();
         [NonSerialized]
         // List of members from components
         Dictionary<FieldInfo, Component> fieldInfo = new Dictionary<FieldInfo, Component>();
@@ -124,15 +125,15 @@ namespace NodeEditor
                     break;
                 default:
                     // Do this for all of components other than scripts
-                    List<PropertyInfo> pi = new List<PropertyInfo>(propertyInfo.Keys);
-                    foreach (PropertyInfo currentPi in pi)
+                    List<CustomPropertyInfo> pi = new List<CustomPropertyInfo>(propertyInfo.Keys);
+                    foreach (CustomPropertyInfo currentPi in pi)
                     {
-                        if (currentPi.Name == nodeRequested)
+                        if (currentPi.propertyInfo.Name + currentPi.parent == nodeRequested)
                         {
                             Component comp;
                             propertyInfo.TryGetValue(currentPi, out comp);
                             System.Object compObj = (System.Object)comp;
-                            windows.Add(new VisualNode(new Rect(mousePos.x, mousePos.y, 150, 200), nodeRequested, currentPi.GetValue(compObj, null), uniqueNodeId));
+                            windows.Add(new VisualNode(new Rect(mousePos.x, mousePos.y, 200, 100), currentPi.propertyInfo.Name, currentPi.parent, currentPi.propertyInfo.GetValue(compObj, null), uniqueNodeId));
                             uniqueNodeId++;
                         }
                     }
@@ -145,7 +146,7 @@ namespace NodeEditor
                             Component comp;
                             fieldInfo.TryGetValue(currentFi, out comp);
                             System.Object compObj = (System.Object)comp;
-                            windows.Add(new VisualNode(new Rect(mousePos.x, mousePos.y, 150, 200), nodeRequested, currentFi.GetValue(compObj), uniqueNodeId));
+                            windows.Add(new VisualNode(new Rect(mousePos.x, mousePos.y, 200, 100), nodeRequested, "", currentFi.GetValue(compObj), uniqueNodeId));
                             uniqueNodeId++;
                         }
                     }
@@ -380,16 +381,18 @@ namespace NodeEditor
                 //   menu.AddItem(new GUIContent("MaxMSP/MaxMSP"), false, Callback, "MaxNode");
 
                 // What does this part do?
-                List<PropertyInfo> pi = new List<PropertyInfo>(propertyInfo.Keys);
+                List<CustomPropertyInfo> pi = new List<CustomPropertyInfo>(propertyInfo.Keys);
 
-                foreach (PropertyInfo currentPi in pi)
+                foreach (CustomPropertyInfo currentPi in pi)
                 {
-                    menu.AddItem(new GUIContent("VisualNodes/" + currentPi.DeclaringType + "/" + currentPi.Name), false, Callback, currentPi.Name);
+                    Component theComponent = new Component();
+                    propertyInfo.TryGetValue(currentPi, out theComponent);
+                    menu.AddItem(new GUIContent("VisualNodes/" + theComponent.gameObject.name + "/" + currentPi.propertyInfo.DeclaringType + "/" + currentPi.propertyInfo.Name), false, Callback, currentPi.propertyInfo.Name + currentPi.parent);
 
                     // Special check for Renderer
-                    if (currentPi.DeclaringType == typeof(Renderer))
+                    if (currentPi.propertyInfo.DeclaringType == typeof(Renderer))
                     {
-                        menu.AddItem(new GUIContent("VisualNodes/" + currentPi.DeclaringType + "/Material"), false, Callback, "Material");
+                        menu.AddItem(new GUIContent("VisualNodes/" + theComponent.gameObject.name + "/" + currentPi.propertyInfo.DeclaringType + "/Material"), false, Callback, "Material");
 
                     }
                 }
@@ -398,7 +401,9 @@ namespace NodeEditor
 
                 foreach (FieldInfo currentFi in fi)
                 {
-                    menu.AddItem(new GUIContent("VisualNodes/" + currentFi.DeclaringType + "/" + currentFi.Name), false, Callback, currentFi.Name);
+                    Component theComponent = new Component();
+                    fieldInfo.TryGetValue(currentFi, out theComponent);
+                    menu.AddItem(new GUIContent("VisualNodes/" + theComponent.gameObject.name + "/" + currentFi.DeclaringType + "/" + currentFi.Name), false, Callback, currentFi.Name);
                 }
 
                 menu.ShowAsContext();
@@ -418,6 +423,12 @@ namespace NodeEditor
                 {
                     windows[i].rectangle = GUI.Window(i, windows[i].rectangle, DrawMaxNodeWindow, windows[i].nodeName);
 
+                }
+                else if (windows[i] is VisualNode)
+                {
+                    VisualNode visualNode = (VisualNode)windows[i];
+                    string displayName = windows[i].nodeName + "(" + visualNode.parent + ")";
+                    windows[i].rectangle = GUI.Window(i, windows[i].rectangle, DrawNodeWindow, displayName);
                 }
                 else
                     windows[i].rectangle = GUI.Window(i, windows[i].rectangle, DrawNodeWindow, windows[i].nodeName);
@@ -484,7 +495,12 @@ namespace NodeEditor
                     }
                 }
             }
-            windows[id].nodeName = GUILayout.TextArea(windows[id].nodeName);
+            // Only allow editing node name for audio and max nodes
+            if (windows[id] is AudioNode || windows[id] is MaxNode)
+            {
+                windows[id].nodeName = GUILayout.TextArea(windows[id].nodeName);
+            }
+
             if (windows[id] is AudioNode)
             {
                 // It is stored to a temp variable to prevent user from messing with the audio parameters. Change
@@ -520,13 +536,13 @@ namespace NodeEditor
 
                 if (temp.visual != null)
                 {
-                    VisualObject vo = new VisualObject(fromObjectField.name);
-
-                    if (!visualObjects.Contains(vo))
-                    {
-                        visualObjects.Add(vo);
-                        //Debug.Log("adding vo");
-                    }
+                    //VisualObject vo = new VisualObject(fromObjectField.name);
+                    //
+                    //if (!visualObjects.Contains(vo))
+                    //{
+                    //    visualObjects.Add(vo);
+                    //    //Debug.Log("adding vo");
+                    //}
 
                     List<Component> keys = new List<Component>(temp.componentsDictionary.Keys);
                     foreach (Component component in keys)
@@ -552,11 +568,17 @@ namespace NodeEditor
                                 if (pi.PropertyType == typeof(Vector3) || pi.PropertyType == typeof(float) ||
                                     pi.PropertyType == typeof(int))
                                 {
+                                    // Create new custom property info object
+                                    CustomPropertyInfo customPi = new CustomPropertyInfo(pi, component.gameObject.name);
+
                                     // Add each property to list of properties
-                                    if ((propertyInfo.ContainsKey(pi)))
-                                        propertyInfo[pi] = component;
+                                    if ((propertyInfo.ContainsKey(customPi)))
+                                        // Overwrite if already contained
+                                        propertyInfo[customPi] = component;
                                     else
-                                        propertyInfo.Add(pi, component);
+                                        // Add if not
+                                        propertyInfo.Add(customPi, component);
+                                    //Debug.Log(propertyInfo.Keys.Count);
 
                                     //if (!(currentVisualObject.propertyInfo.ContainsKey(pi)))
                                     //    currentVisualObject.propertyInfo.Add(pi, component);

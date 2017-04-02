@@ -12,14 +12,15 @@ namespace NodeEditor
         public PropertyInfo propertyInfo;
         public FieldInfo fieldInfo;
         public object compObj;
-
+        public string parent;
         // Tracks which properties of a Vector3 to change
         public bool[] Vectors = new bool[3];
 
-        public VisualNode(Rect r, string name, object value, int index)
+        public VisualNode(Rect r, string name, string parent, object value, int index)
         {
             rectangle = r;
             this.nodeName = name;
+            this.parent = parent;
             id = index;
             //this.value = value;
         }
@@ -29,7 +30,7 @@ namespace NodeEditor
         }
 
         // Updates the variables of a component
-        public void UpdateVisual(Dictionary<PropertyInfo, Component> propertyInfoDictionary)
+        public void UpdateVisual(Dictionary<CustomPropertyInfo, Component> propertyInfoDictionary)
         {
 
             // Temp value
@@ -37,24 +38,24 @@ namespace NodeEditor
             if (this.value != null)
             {
 
-                List<PropertyInfo> propertyInfo = new List<PropertyInfo>(propertyInfoDictionary.Keys);
+                List<CustomPropertyInfo> propertyInfo = new List<CustomPropertyInfo>(propertyInfoDictionary.Keys);
                 for (int i = 0; i < propertyInfo.Count; i++)
                 {
 
-                    if (propertyInfo[i].Name == this.nodeName)
+                    if (propertyInfo[i].propertyInfo.Name == this.nodeName && propertyInfo[i].parent == this.parent)
                     {
                         Component comp;
                         propertyInfoDictionary.TryGetValue(propertyInfo[i], out comp);
                         compObj = (System.Object)comp;
 
                         // Save propertyInfo to track down type later on
-                        this.propertyInfo = propertyInfo[i];
+                        this.propertyInfo = propertyInfo[i].propertyInfo;
 
                         // Update as vector
-                        if (propertyInfo[i].PropertyType == typeof(Vector3))
+                        if (propertyInfo[i].propertyInfo.PropertyType == typeof(Vector3))
                         {
                             // Cast
-                            Vector3 vector3Value = (Vector3)propertyInfo[i].GetValue(compObj, null);
+                            Vector3 vector3Value = (Vector3)propertyInfo[i].propertyInfo.GetValue(compObj, null);
 
                             // Loop through each vector attribute
                             for (int j = 0; j < 3; j++)
@@ -65,20 +66,20 @@ namespace NodeEditor
 
                             }
                             // Set the value
-                            propertyInfo[i].SetValue(compObj, vector3Value, null);
+                            propertyInfo[i].propertyInfo.SetValue(compObj, vector3Value, null);
                         }
                         // Update as int
-                        else if (propertyInfo[i].PropertyType == typeof(int))
+                        else if (propertyInfo[i].propertyInfo.PropertyType == typeof(int))
                         {
                             // Cast
                             int intValue = (int)this.value;
                             // Set the value
-                            propertyInfo[i].SetValue(compObj, intValue, null);
+                            propertyInfo[i].propertyInfo.SetValue(compObj, intValue, null);
                         }
                         // Default
                         else
                         {
-                            propertyInfo[i].SetValue(compObj, this.value, null);
+                            propertyInfo[i].propertyInfo.SetValue(compObj, this.value, null);
                         }
                     }
                 }
