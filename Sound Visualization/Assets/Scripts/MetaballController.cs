@@ -10,7 +10,8 @@ public class MetaballController : MonoBehaviour {
     [Range(1, 100)]
     // Number of metaballs
     public int metaballInstances;
-
+    [Range(-1, 1)]
+    public float metaballSpeed;
     // Use this for initialization
     void Start ()
     {
@@ -44,11 +45,7 @@ public class MetaballController : MonoBehaviour {
             {
                 GameObject childObject = Instantiate(metaball) as GameObject;
                 childObject.transform.parent = this.transform;
-                //childObject.transform.localPosition = new Vector3(0.5f, 0f, 0f);
                 childObject.transform.localPosition = new Vector3(Random.Range(-0.3f, 0.3f), Random.Range(-0.3f, 0.3f), Random.Range(-0.3f, 0.3f));
-                //childObject.transform.RotateAround(Vector3.zero, Vector3.forward, rotationCount);
-                //childObject.transform.position.Normalize();
-                //rotationCount += 100;
             }
         }
 
@@ -72,6 +69,14 @@ public class MetaballController : MonoBehaviour {
 
             }
         }
-            
+
+        // Update each metaball's speed
+        BouncingBall[] metaballs = GetComponentsInChildren<BouncingBall>();
+        foreach (BouncingBall metaball in metaballs)
+        {
+            metaball.speed = metaballSpeed;
+        }
     }
+
+    
 }
