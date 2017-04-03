@@ -4,25 +4,12 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.IO;
 using System;
-using Newtonsoft.Json;
-using System.Runtime.Serialization.Formatters.Binary;
-using System.Runtime.Serialization;
-
-/* TODO LIST.
- *
- * Save nodes/ Load nodes.
- * Resize nodes.
- *
- */
-
 
 namespace NodeEditor
 {
-
     [Serializable]
     public class NodeEditor : EditorWindow
     {
-        // UDP information
         public static UDPPacketIO udp;
         // Object field for controller node
         UnityEngine.Object fromObjectField = new UnityEngine.Object();
@@ -49,12 +36,13 @@ namespace NodeEditor
         bool draggingUp = false;
         bool draggingDown = false;
 
+
         [MenuItem("Window/Node Editor")]
         static void Init()
         {
             NodeEditor window = (NodeEditor)GetWindow(typeof(NodeEditor));
-            // Init the user datagram protocal.
             udp = new UDPPacketIO();
+            // Init the user datagram protocal.
             // Can change the listen port for each different input?
             udp.init(window.RemoteIP, window.SendToPort, window.ListenerPort);
             window.handler = new Osc();
@@ -65,7 +53,6 @@ namespace NodeEditor
 
         }
 
-        // Close the udp connection when the editor window is closed
         void OnDestroy()
         {
             udp.Close();
@@ -84,7 +71,7 @@ namespace NodeEditor
             }
             else
                 nodeRequested = obj.ToString();
-            
+
             switch (nodeRequested)
             {
                 /*
@@ -305,7 +292,7 @@ namespace NodeEditor
             {
                 for (int i = 0; i < windows.Count; i++)
                 {
-                    if(windows[i].id == windowsToAttach[1] )
+                    if (windows[i].id == windowsToAttach[1])
                         if (!(windows[i] is AudioNode || windows[i] is RandomGeneratorNode))
                         {
                             // Add them to connection
@@ -320,9 +307,9 @@ namespace NodeEditor
 
             // Draw the connection. - Remove abract on type Node.
             int firstNodeIndex = 0;
-            int secondNodeIndex =0;
+            int secondNodeIndex = 0;
             // Connection        
-            for (int x =0; x< attachedWindows.Count; x+=2)
+            for (int x = 0; x < attachedWindows.Count; x += 2)
             {
                 // Search for first loc.
                 for (int i = 0; i < windows.Count; i++)
@@ -334,8 +321,8 @@ namespace NodeEditor
                 // Now find the second.
                 for (int i = 0; i < windows.Count; i++)
                 {
-                   
-                    if (windows[i].id == attachedWindows[x+1])
+
+                    if (windows[i].id == attachedWindows[x + 1])
                         secondNodeIndex = i;
                 }
 
@@ -353,7 +340,7 @@ namespace NodeEditor
                     windows[secondNodeIndex].value = windows[firstNodeIndex].value;
                 }
             }
-       
+
             // Draw right click menu and populate list. Also check for right click event.
             Event currentEvent = Event.current;
             // Create generic menu.
@@ -373,23 +360,23 @@ namespace NodeEditor
                         menu.AddItem(new GUIContent("Delete"), false, Callback, "Delete:" + windows[i].id);
                         menu.AddSeparator("");
                     }
-                   
+
                 }
                 // If right click was pressed, stop trying to create a connection
                 windowsToAttach.Clear();
 
                 // Now create the menu, add items and show it
-                menu.AddItem(new GUIContent("ControllerNode"), false, Callback, new CallBackObject("ControllerNode",mousePos));
+                menu.AddItem(new GUIContent("ControllerNode"), false, Callback, new CallBackObject("ControllerNode", mousePos));
                 menu.AddSeparator("");
                 //menu.AddItem(new GUIContent("VisualNodes/"), false, Callback, "V");
                 //menu.AddSeparator("");
-                menu.AddItem(new GUIContent("Operator"), false, Callback, new CallBackObject("Operator",mousePos));
+                menu.AddItem(new GUIContent("Operator"), false, Callback, new CallBackObject("Operator", mousePos));
                 menu.AddSeparator("");
-                menu.AddItem(new GUIContent("AudioNodes/Random"), false, Callback, new CallBackObject("Random",mousePos));
-                menu.AddItem(new GUIContent("AudioNodes/Amplitude"), false, Callback, new CallBackObject("Amplitude",mousePos));
-                menu.AddItem(new GUIContent("AudioNodes/Pitch"), false, Callback, new CallBackObject("Pitch",mousePos));
-                menu.AddItem(new GUIContent("AudioNodes/Volume"), false, Callback, new CallBackObject("Volume",mousePos));
-                menu.AddItem(new GUIContent("AudioNodes/GenericAudio"), false, Callback, new CallBackObject("GenericAudio",mousePos));
+                menu.AddItem(new GUIContent("AudioNodes/Random"), false, Callback, new CallBackObject("Random", mousePos));
+                menu.AddItem(new GUIContent("AudioNodes/Amplitude"), false, Callback, new CallBackObject("Amplitude", mousePos));
+                menu.AddItem(new GUIContent("AudioNodes/Pitch"), false, Callback, new CallBackObject("Pitch", mousePos));
+                menu.AddItem(new GUIContent("AudioNodes/Volume"), false, Callback, new CallBackObject("Volume", mousePos));
+                menu.AddItem(new GUIContent("AudioNodes/GenericAudio"), false, Callback, new CallBackObject("GenericAudio", mousePos));
                 menu.AddSeparator("");
                 menu.AddItem(new GUIContent("File/Save"), false, SaveWindow, "Save");
                 menu.AddItem(new GUIContent("File/Load"), false, LoadWindow, "Load");
@@ -541,9 +528,19 @@ namespace NodeEditor
             {
                 // Cast and add TextArea
                 ControllerNode temp = (ControllerNode)windows[id];
-
+                //temp.gameObjectTag = GUILayout.TextArea(temp.gameObjectTag);
+                // Disable GUI for object field
+                //if (fromObjectField != null)
+                //    GUI.enabled = false;
                 fromObjectField = EditorGUILayout.ObjectField(fromObjectField, typeof(UnityEngine.Object), true);
 
+
+                // Enable GUI for rest
+                //if (fromObjectField != null)
+                //    GUI.enabled = true;
+                // Link visual object to given visual node, only once
+                //if (temp.visual == null)
+                //{
                 temp.visual = fromObjectField;
                 temp.Test();
 
@@ -551,6 +548,13 @@ namespace NodeEditor
 
                 if (temp.visual != null)
                 {
+                    //VisualObject vo = new VisualObject(fromObjectField.name);
+                    //
+                    //if (!visualObjects.Contains(vo))
+                    //{
+                    //    visualObjects.Add(vo);
+                    //    //Debug.Log("adding vo");
+                    //}
 
                     List<Component> keys = new List<Component>(temp.componentsDictionary.Keys);
                     foreach (Component component in keys)
@@ -565,6 +569,9 @@ namespace NodeEditor
 
                         if (value)
                         {
+                            ////TODO: loop through all visualobjects and access their info (will possibly remove this)
+                            //foreach (VisualObject currentVisualObject in visualObjects)
+                            //{
 
                             // For most components
                             foreach (PropertyInfo pi in component.GetType().GetProperties())
@@ -583,6 +590,12 @@ namespace NodeEditor
                                     else
                                         // Add if not
                                         propertyInfo.Add(customPi, component);
+                                    //Debug.Log(propertyInfo.Keys.Count);
+
+                                    //if (!(currentVisualObject.propertyInfo.ContainsKey(pi)))
+                                    //    currentVisualObject.propertyInfo.Add(pi, component);
+
+                                    //Debug.Log(currentVisualObject.propertyInfo);
                                 }
                             }
 
@@ -598,8 +611,12 @@ namespace NodeEditor
                                         fieldInfo[fi] = component;
                                     else
                                         fieldInfo.Add(fi, component);
+
+                                    //if (!(currentVisualObject.fieldInfo.ContainsKey(fi)))
+                                    //    currentVisualObject.fieldInfo.Add(fi, component);
                                 }
                             }
+                            //}
                         }
                     }
                 }
@@ -933,39 +950,53 @@ namespace NodeEditor
                     saveData.rNodes.Add((RandomGeneratorNode)windows[i]);
             }
             saveData.windowsToAttach = windowsToAttach;
+            // Convert manager to json format.
             string json = EditorJsonUtility.ToJson(saveData);
-            File.WriteAllText("SaveTest", json);
-            Debug.Log("File saved");
+            // Get save path from user.
+            string filePath = EditorUtility.SaveFilePanel("Saving editor", "..//Assets//Saves", "Graph", "Sav");
+            if (filePath.Length != 0)
+            {
+                // Write file to file path.
+                File.WriteAllText(filePath, json);
+                Debug.Log("File saved");
+            }
         }
 
 
         // Load serialized file - Add option what file later.
         public void LoadWindow(object obj)
         {
-            string json = File.ReadAllText("SaveTest");
-            NodeManager load = new NodeManager();
-            EditorJsonUtility.FromJsonOverwrite(json, load);
-            //// Reset variables 
-            attachedWindows = load.attachedWindows;
-            //windows = load.windows;
-            windows = new List<Node>();
-            foreach (AudioNode x in load.auNodes)
-                windows.Add(x);
-            foreach (VisualNode x in load.viNodes)
-                windows.Add(x);
-            foreach (OperatorNode x in load.oNodes)
-                windows.Add(x);
-            foreach (ControllerNode x in load.cNodes)
-                windows.Add(x);
-            foreach (RandomGeneratorNode x in load.rNodes)
-                windows.Add(x);
-            foreach (MaxNode x in load.mNodes)
-                windows.Add(x);
-            foreach (MaterialNode x in load.matNodes)
-                windows.Add(x);
-            uniqueNodeId = load.uniqueNodeId;
-            windowsToAttach = load.windowsToAttach;
-            Debug.Log("File loaded!");
+            // Get file path from user.
+            string filePath = EditorUtility.OpenFilePanel("Saves", ".//Assets//Saves", "Sav");
+            if (filePath.Length != 0)
+            {
+                // Read contents from file path.
+                string json = File.ReadAllText(filePath);
+                // COnvert json message into NodeManager class.
+                NodeManager load = new NodeManager();
+                EditorJsonUtility.FromJsonOverwrite(json, load);
+                // Reset variables 
+                attachedWindows = load.attachedWindows;
+                //windows = load.windows;
+                windows = new List<Node>();
+                foreach (AudioNode x in load.auNodes)
+                    windows.Add(x);
+                foreach (VisualNode x in load.viNodes)
+                    windows.Add(x);
+                foreach (OperatorNode x in load.oNodes)
+                    windows.Add(x);
+                foreach (ControllerNode x in load.cNodes)
+                    windows.Add(x);
+                foreach (RandomGeneratorNode x in load.rNodes)
+                    windows.Add(x);
+                foreach (MaxNode x in load.mNodes)
+                    windows.Add(x);
+                foreach (MaterialNode x in load.matNodes)
+                    windows.Add(x);
+                uniqueNodeId = load.uniqueNodeId;
+                windowsToAttach = load.windowsToAttach;
+                Debug.Log("File loaded!");
+            }
         }
     }
 }
