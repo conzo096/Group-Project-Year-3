@@ -7,6 +7,7 @@ using UnityEngine;
 namespace NodeEditor
 {
     // Node for testing
+    [Serializable]
     public class RandomGeneratorNode : Node
     {
         public RandomGeneratorNode()

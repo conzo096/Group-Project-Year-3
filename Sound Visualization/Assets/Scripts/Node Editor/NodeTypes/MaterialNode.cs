@@ -6,6 +6,7 @@ using UnityEngine;
 
 namespace NodeEditor
 {
+    [Serializable]
     public class MaterialNode : Node
     {
         public Material material;
@@ -19,7 +20,7 @@ namespace NodeEditor
 
         public void PassValueToMaterial()
         {
-            if (material != null && methodToSearch != null)
+            if (material != null && methodToSearch != null && value != null)
                 material.SetFloat("_" + methodToSearch, (float)value);
         }
     }
