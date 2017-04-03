@@ -27,7 +27,7 @@ namespace NodeEditor
 
         // Object field for controller node
         UnityEngine.Object fromObjectField = new UnityEngine.Object();
-        Operators display = Operators.Multiply;
+        //Operators display = Operators.Multiply;
         //OSC variables
         public string RemoteIP = /*"146.176.164.4";*/ "127.0f.0.1f"; // signifies a local host (if testing locally
         public int SendToPort = 9000; //the port you will be sending from
@@ -55,13 +55,13 @@ namespace NodeEditor
         static void Init()
         {
             NodeEditor window = (NodeEditor)GetWindow(typeof(NodeEditor));
-            //UDPPacketIO udp = new UDPPacketIO();
-            ////// Init the user datagram protocal.
-            ////// Can change the listen port for each different input?
-            //udp.init(window.RemoteIP, window.SendToPort, window.ListenerPort);
-            //window.handler = new Osc();
-            //window.handler.init(udp);
-            //window.handler.SetAllMessageHandler(window.AllMessageHandler);
+            UDPPacketIO udp = new UDPPacketIO();
+            //// Init the user datagram protocal.
+            //// Can change the listen port for each different input?
+            udp.init(window.RemoteIP, window.SendToPort, window.ListenerPort);
+            window.handler = new Osc();
+            window.handler.init(udp);
+            window.handler.SetAllMessageHandler(window.AllMessageHandler);
 
             window.Show();
 
@@ -699,11 +699,11 @@ namespace NodeEditor
 
                 //Transform selectedObj = Selection.activeTransform;
 
-                display = (Operators)EditorGUILayout.EnumPopup(
+                temp.currentOperator = (Operators)EditorGUILayout.EnumPopup(
                     "Type",
-                    display);
+                    temp.currentOperator);
 
-                temp.UpdateState(display);
+                //temp.UpdateState(temp.currentOperator);
 
                 // Show output
                 EditorGUILayout.FloatField("Output:", temp.output);
