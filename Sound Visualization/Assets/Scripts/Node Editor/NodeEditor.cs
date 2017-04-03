@@ -4,22 +4,9 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.IO;
 using System;
-using Newtonsoft.Json;
-using System.Runtime.Serialization.Formatters.Binary;
-using System.Runtime.Serialization;
-
-/* TODO LIST.
- *
- * Save nodes/ Load nodes.
- * Resize nodes.
- *
- */
-
 
 namespace NodeEditor
 {
-    
-
     [Serializable]
     public class NodeEditor : EditorWindow
     {
@@ -58,10 +45,10 @@ namespace NodeEditor
             UDPPacketIO udp = new UDPPacketIO();
             //// Init the user datagram protocal.
             //// Can change the listen port for each different input?
-            udp.init(window.RemoteIP, window.SendToPort, window.ListenerPort);
-            window.handler = new Osc();
-            window.handler.init(udp);
-            window.handler.SetAllMessageHandler(window.AllMessageHandler);
+            //udp.init(window.RemoteIP, window.SendToPort, window.ListenerPort);
+            //window.handler = new Osc();
+            //window.handler.init(udp);
+            //window.handler.SetAllMessageHandler(window.AllMessageHandler);
 
             window.Show();
 
@@ -959,39 +946,53 @@ namespace NodeEditor
                     saveData.rNodes.Add((RandomGeneratorNode)windows[i]);
             }
             saveData.windowsToAttach = windowsToAttach;
+            // Convert manager to json format.
             string json = EditorJsonUtility.ToJson(saveData);
-            File.WriteAllText("SaveTest", json);
-            Debug.Log("File saved");
+            // Get save path from user.
+            string filePath = EditorUtility.SaveFilePanel("Saving editor", "..//Assets//Saves", "Graph", "Sav");
+            if (filePath.Length != 0)
+            {
+                // Write file to file path.
+                File.WriteAllText(filePath, json);
+                Debug.Log("File saved");
+            }
         }
 
 
         // Load serialized file - Add option what file later.
         public void LoadWindow(object obj)
         {
-            string json = File.ReadAllText("SaveTest");
-            NodeManager load = new NodeManager();
-            EditorJsonUtility.FromJsonOverwrite(json, load);
-            //// Reset variables 
-            attachedWindows = load.attachedWindows;
-            //windows = load.windows;
-            windows = new List<Node>();
-            foreach (AudioNode x in load.auNodes)
-                windows.Add(x);
-            foreach (VisualNode x in load.viNodes)
-                windows.Add(x);
-            foreach (OperatorNode x in load.oNodes)
-                windows.Add(x);
-            foreach (ControllerNode x in load.cNodes)
-                windows.Add(x);
-            foreach (RandomGeneratorNode x in load.rNodes)
-                windows.Add(x);
-            foreach (MaxNode x in load.mNodes)
-                windows.Add(x);
-            foreach (MaterialNode x in load.matNodes)
-                windows.Add(x);
-            uniqueNodeId = load.uniqueNodeId;
-            windowsToAttach = load.windowsToAttach;
-            Debug.Log("File loaded!");
+            // Get file path from user.
+            string filePath = EditorUtility.OpenFilePanel("Saves",".//Assets//Saves", "Sav");
+            if (filePath.Length != 0)
+            {
+                // Read contents from file path.
+                string json = File.ReadAllText(filePath);
+                // COnvert json message into NodeManager class.
+                NodeManager load = new NodeManager();
+                EditorJsonUtility.FromJsonOverwrite(json, load);
+                // Reset variables 
+                attachedWindows = load.attachedWindows;
+                //windows = load.windows;
+                windows = new List<Node>();
+                foreach (AudioNode x in load.auNodes)
+                    windows.Add(x);
+                foreach (VisualNode x in load.viNodes)
+                    windows.Add(x);
+                foreach (OperatorNode x in load.oNodes)
+                    windows.Add(x);
+                foreach (ControllerNode x in load.cNodes)
+                    windows.Add(x);
+                foreach (RandomGeneratorNode x in load.rNodes)
+                    windows.Add(x);
+                foreach (MaxNode x in load.mNodes)
+                    windows.Add(x);
+                foreach (MaterialNode x in load.matNodes)
+                    windows.Add(x);
+                uniqueNodeId = load.uniqueNodeId;
+                windowsToAttach = load.windowsToAttach;
+                Debug.Log("File loaded!");
+            }
         }
     }
 }
