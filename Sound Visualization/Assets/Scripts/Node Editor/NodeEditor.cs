@@ -524,8 +524,7 @@ namespace NodeEditor
                 // It is stored to a temp variable to prevent user from messing with the audio parameters. Change
                 string t = "No Value...";
                 //Debug.Log(windows[id].value);
-                if (windows[id].value != null)
-                    t = windows[id].value.ToString();
+                t = windows[id].value.ToString();
                 GUILayout.Label(t);
             }
 
@@ -548,7 +547,7 @@ namespace NodeEditor
                 //if (temp.visual == null)
                 //{
                 temp.visual = fromObjectField;
-                temp.Test();
+                temp.LoadComponents();
 
                 //}
 
@@ -632,59 +631,52 @@ namespace NodeEditor
                 // Cast and add TextField for value
                 VisualNode temp = (VisualNode)windows[id];
                 //temp.UpdateVisual(propertyInfo);
-
-                if (temp.value != null)
+                //Debug.Log(temp.value.GetType());
+                // Vectors are displayed differently than floats and ints
+                if (temp.propertyInfo != null)
                 {
-
-                    //Debug.Log(temp.value.GetType());
-                    // Vectors are displayed differently than floats and ints
-                    if (temp.propertyInfo != null)
+                    if (temp.propertyInfo.PropertyType == typeof(Vector3))
                     {
-                        if (temp.propertyInfo.PropertyType == typeof(Vector3))
-                        {
+                        // Cast object to Vector3
+                        Vector3 vector3Value = (Vector3)temp.propertyInfo.GetValue(temp.compObj, null);
 
-                            // Cast object to Vector3
-                            Vector3 vector3Value = (Vector3)temp.propertyInfo.GetValue(temp.compObj, null);
+                        // Display Vector3
+                        EditorGUILayout.Vector3Field("", vector3Value);
 
-                            // Display Vector3
-                            EditorGUILayout.Vector3Field("", vector3Value);
-
-                            // Toggle boxes
-                            EditorGUILayout.BeginHorizontal();
-                            temp.Vectors[0] = EditorGUILayout.Toggle(temp.Vectors[0]);
-                            temp.Vectors[1] = EditorGUILayout.Toggle(temp.Vectors[1]);
-                            temp.Vectors[2] = EditorGUILayout.Toggle(temp.Vectors[2]);
-                            EditorGUILayout.EndHorizontal();
-                        }
-                        else
-                        {
-                            EditorGUILayout.FloatField((float)temp.value);
-                        }
+                        // Toggle boxes
+                        EditorGUILayout.BeginHorizontal();
+                        temp.Vectors[0] = EditorGUILayout.Toggle(temp.Vectors[0]);
+                        temp.Vectors[1] = EditorGUILayout.Toggle(temp.Vectors[1]);
+                        temp.Vectors[2] = EditorGUILayout.Toggle(temp.Vectors[2]);
+                        EditorGUILayout.EndHorizontal();
                     }
-                    if (temp.fieldInfo != null)
+                    else
                     {
-                        if (temp.fieldInfo.FieldType == typeof(Vector3))
-                        {
-                            // Cast object to Vector3
-                            Vector3 vector3Value = (Vector3)temp.fieldInfo.GetValue(temp.compObj);
-
-                            // Display Vector3
-                            EditorGUILayout.Vector3Field("", vector3Value);
-
-                            // Toggle boxes
-                            EditorGUILayout.BeginHorizontal();
-                            temp.Vectors[0] = EditorGUILayout.Toggle(temp.Vectors[0]);
-                            temp.Vectors[1] = EditorGUILayout.Toggle(temp.Vectors[1]);
-                            temp.Vectors[2] = EditorGUILayout.Toggle(temp.Vectors[2]);
-                            EditorGUILayout.EndHorizontal();
-                        }
-                        else
-                        {
-                            EditorGUILayout.FloatField((float)temp.value);
-                        }
+                        EditorGUILayout.FloatField((float)temp.value);
                     }
                 }
+                if (temp.fieldInfo != null)
+                {
+                    if (temp.fieldInfo.FieldType == typeof(Vector3))
+                    {
+                        // Cast object to Vector3
+                        Vector3 vector3Value = (Vector3)temp.fieldInfo.GetValue(temp.compObj);
 
+                        // Display Vector3
+                        EditorGUILayout.Vector3Field("", vector3Value);
+
+                        // Toggle boxes
+                        EditorGUILayout.BeginHorizontal();
+                        temp.Vectors[0] = EditorGUILayout.Toggle(temp.Vectors[0]);
+                        temp.Vectors[1] = EditorGUILayout.Toggle(temp.Vectors[1]);
+                        temp.Vectors[2] = EditorGUILayout.Toggle(temp.Vectors[2]);
+                        EditorGUILayout.EndHorizontal();
+                    }
+                    else
+                    {
+                        EditorGUILayout.FloatField((float)temp.value);
+                    }
+                }
             }
             else if (windows[id] is OperatorNode)
             {
@@ -922,7 +914,7 @@ namespace NodeEditor
             // Where do send it too.
             string[] incAddress = oscMessage.Address.Split('/');
             // Value it contains.
-            object incValue = oscMessage.Values[0];
+            float incValue = (float)oscMessage.Values[0];
             // Search each audio node to find where to send it.
             for (int i = 0; i < windows.Count; i++)
                 // First check if correct class type.

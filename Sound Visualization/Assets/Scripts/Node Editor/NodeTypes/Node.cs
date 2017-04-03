@@ -1,4 +1,5 @@
-﻿using System;
+﻿/* Base node class. */
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -7,7 +8,7 @@ using UnityEngine;
 namespace NodeEditor
 {
 
-    // Base node class.
+    
     [Serializable]
     public abstract class Node
     {

@@ -1,4 +1,5 @@
-﻿using System;
+﻿/* Used as a replacement of PropertyInfo, of the Reflection class. */
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;

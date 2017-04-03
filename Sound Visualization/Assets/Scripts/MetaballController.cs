@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿/* Controls the movement and spawning of metaball objects */
+using UnityEngine;
 using System.Collections;
 
 public class MetaballController : MonoBehaviour {

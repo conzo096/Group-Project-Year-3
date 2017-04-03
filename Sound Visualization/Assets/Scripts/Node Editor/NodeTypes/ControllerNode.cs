@@ -1,10 +1,11 @@
-﻿using System;
+﻿/* Controller node, used to generate visual nodes based on provided gameobjects. */
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
 namespace NodeEditor
 {
-    // Controller node, used to create visual nodes based on a given gameobject
+    
     [Serializable]
     public class ControllerNode : Node
     {
@@ -18,25 +19,20 @@ namespace NodeEditor
         {
             rectangle = r;
             id = index;
-            //visual = GameObject.FindGameObjectWithTag(tag);
-            //controller = visual.GetComponent<NoiseRingController>();
             nodeName = name;
-            id = index;
         }
 
         public ControllerNode()
         {
         }
 
-        public void Test()
+        public void LoadComponents()
         {
 
             if (visual != null)
             {
                 GameObject temp = (GameObject)visual;
-                
-                //Debug.Log(temp.name);
-                //transform = temp.GetComponent<Transform>();
+
                 Component[] tempComponents = temp.GetComponents<Component>();
                 foreach (Component component in tempComponents)
                 {

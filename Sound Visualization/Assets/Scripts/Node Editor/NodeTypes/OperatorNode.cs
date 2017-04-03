@@ -1,7 +1,9 @@
-﻿using UnityEngine;
+﻿/* OperatorNode, used to modify a value circulating in the system by applying math operations to it. */
+using UnityEngine;
 using System;
 namespace NodeEditor
 {
+    // All possible math operations
     public enum Operators
     {
         Add = 0,
@@ -14,49 +16,58 @@ namespace NodeEditor
     [Serializable]
     public class OperatorNode : Node
     {
-
+        // The user specified value to modify by
         public float modifier;
+        // The resulting output
         public float output;
+        // Current math operation to be used
         public Operators currentOperator;
         public OperatorNode(Rect r, string name, int index)
         {
-            this.rectangle = r;
-            this.nodeName = name;
+            rectangle = r;
+            nodeName = name;
             id = index;
         }
 
+        // Default constructor
         public OperatorNode()
         {
         }
 
+        // Calculates the output
         public void CalculateOutput()
         {
             switch (currentOperator)
             {
+                // Add
                 case Operators.Add:
-                    this.output = (float)this.value + this.modifier;
+                    output = value + modifier;
                     break;
+                // Divide
                 case Operators.Divide:
+                    // Avoid dividing by 0
                     if (modifier != 0)
-                        this.output = (float)this.value / this.modifier;
+                        output = value / modifier;
                     break;
+                // Multiply
                 case Operators.Multiply:
-                    this.output = (float)this.value * this.modifier;
+                    output = value * modifier;
                     break;
+                // Subtract
                 case Operators.Subtract:
-                    this.output = (float)this.value - this.modifier;
+                    output = value - modifier;
                     break;
+                // Power
                 case Operators.Power:
-                    this.output = Mathf.Pow((float)this.value, this.modifier);
+                    output = Mathf.Pow(value, modifier);
                     break;
+                // Default will just pass on the value
                 default:
-                    this.output = (float)this.value * this.modifier;
+                    output = value;
                     break;
-
-                //Debug.Log(this.output);
             }
         }
-
+        // Finds out which operator to use
         public void UpdateState(Operators currentOperator)
         {
             this.currentOperator = currentOperator;
