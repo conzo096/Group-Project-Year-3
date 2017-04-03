@@ -5,6 +5,8 @@ using System.Reflection;
 using System.IO;
 using System;
 using Newtonsoft.Json;
+using System.Runtime.Serialization.Formatters.Binary;
+using System.Runtime.Serialization;
 
 /* TODO LIST.
  *
@@ -34,9 +36,7 @@ namespace NodeEditor
         // Id for the node.
         private int uniqueNodeId = 0;
         // List of properties from components
-        [NonSerialized]
         Dictionary<CustomPropertyInfo, Component> propertyInfo = new Dictionary<CustomPropertyInfo, Component>();
-        [NonSerialized]
         // List of members from components
         Dictionary<FieldInfo, Component> fieldInfo = new Dictionary<FieldInfo, Component>();
         // List of rectangle nodes.
@@ -50,16 +50,6 @@ namespace NodeEditor
         bool draggingUp = false;
         bool draggingDown = false;
 
-        // Constructors.
-        NodeEditor() { }
-
-        NodeEditor(NodeManager copy)
-        {
-            uniqueNodeId = copy.uniqueNodeId;
-            windows = copy.windows;
-            windowsToAttach = copy.windowsToAttach;
-            attachedWindows = copy.attachedWindows;
-        }
 
         [MenuItem("Window/Node Editor")]
         static void Init()
@@ -950,19 +940,27 @@ namespace NodeEditor
             NodeManager saveData = new NodeManager();
             saveData.attachedWindows = attachedWindows;
             saveData.uniqueNodeId = uniqueNodeId;
-            saveData.windows = windows;
+            // Save Nodes to correct list.
+            for (int i = 0; i < windows.Count; i++)
+            {
+                if (windows[i] is AudioNode)
+                    saveData.auNodes.Add((AudioNode)windows[i]);
+                if (windows[i] is VisualNode)
+                    saveData.viNodes.Add((VisualNode)windows[i]);
+                if (windows[i] is OperatorNode)
+                    saveData.oNodes.Add((OperatorNode)windows[i]);
+                if (windows[i] is MaterialNode)
+                    saveData.matNodes.Add((MaterialNode)windows[i]);
+                if (windows[i] is ControllerNode)
+                    saveData.cNodes.Add((ControllerNode)windows[i]);
+                if (windows[i] is MaxNode)
+                    saveData.mNodes.Add((MaxNode)windows[i]);
+                if (windows[i] is RandomGeneratorNode)
+                    saveData.rNodes.Add((RandomGeneratorNode)windows[i]);
+            }
             saveData.windowsToAttach = windowsToAttach;
-            string json = JsonConvert.SerializeObject(saveData, Formatting.Indented,
-                        new JsonSerializerSettings
-                        {
-                            ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
-                            PreserveReferencesHandling = PreserveReferencesHandling.Objects,
-                            TypeNameHandling = TypeNameHandling.All
-                        });
-            //string json = JsonUtility.ToJson(saveData);
-            // Not safe.
+            string json = EditorJsonUtility.ToJson(saveData);
             File.WriteAllText("SaveTest", json);
-
             Debug.Log("File saved");
         }
 
@@ -970,22 +968,30 @@ namespace NodeEditor
         // Load serialized file - Add option what file later.
         public void LoadWindow(object obj)
         {
-            // Now we can read the serialized book ...  
-            //System.Xml.Serialization.XmlSerializer reader =
-            // new System.Xml.Serialization.XmlSerializer(typeof(NodeManager));
-
             string json = File.ReadAllText("SaveTest");
             NodeManager load = new NodeManager();
-            load = JsonConvert.DeserializeObject<NodeManager>(json,new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.All });
-
-            // Reset variables 
+            EditorJsonUtility.FromJsonOverwrite(json, load);
+            //// Reset variables 
             attachedWindows = load.attachedWindows;
-            windows = load.windows;
+            //windows = load.windows;
+            windows = new List<Node>();
+            foreach (AudioNode x in load.auNodes)
+                windows.Add(x);
+            foreach (VisualNode x in load.viNodes)
+                windows.Add(x);
+            foreach (OperatorNode x in load.oNodes)
+                windows.Add(x);
+            foreach (ControllerNode x in load.cNodes)
+                windows.Add(x);
+            foreach (RandomGeneratorNode x in load.rNodes)
+                windows.Add(x);
+            foreach (MaxNode x in load.mNodes)
+                windows.Add(x);
+            foreach (MaterialNode x in load.matNodes)
+                windows.Add(x);
             uniqueNodeId = load.uniqueNodeId;
             windowsToAttach = load.windowsToAttach;
-
             Debug.Log("File loaded!");
-              
         }
     }
 }

@@ -7,6 +7,7 @@ using UnityEngine;
 
 namespace NodeEditor
 {
+    [Serializable]
     public class VisualObject
     {
         public string identifier;

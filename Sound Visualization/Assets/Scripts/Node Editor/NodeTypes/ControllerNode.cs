@@ -30,9 +30,11 @@ namespace NodeEditor
 
         public void Test()
         {
+
             if (visual != null)
             {
                 GameObject temp = (GameObject)visual;
+                
                 //Debug.Log(temp.name);
                 //transform = temp.GetComponent<Transform>();
                 Component[] tempComponents = temp.GetComponents<Component>();
