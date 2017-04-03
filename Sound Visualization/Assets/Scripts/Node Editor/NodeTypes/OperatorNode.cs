@@ -31,31 +31,27 @@ namespace NodeEditor
 
         public void CalculateOutput()
         {
-            if (this.value != null)
+            switch (currentOperator)
             {
-                switch (currentOperator)
-                {
-                    case Operators.Add:
-                        this.output = (float)this.value + this.modifier;
-                        break;
-                    case Operators.Divide:
-                        if (modifier != 0)
-                            this.output = (float)this.value / this.modifier;
-                        break;
-                    case Operators.Multiply:
-                        this.output = (float)this.value * this.modifier;
-                        break;
-                    case Operators.Subtract:
-                        this.output = (float)this.value - this.modifier;
-                        break;
-                    case Operators.Power:
-                        this.output = Mathf.Pow((float)this.value, this.modifier);
-                        break;
-                    default:
-                        this.output = (float)this.value * this.modifier;
-                        break;
-
-                }
+                case Operators.Add:
+                    this.output = (float)this.value + this.modifier;
+                    break;
+                case Operators.Divide:
+                    if (modifier != 0)
+                        this.output = (float)this.value / this.modifier;
+                    break;
+                case Operators.Multiply:
+                    this.output = (float)this.value * this.modifier;
+                    break;
+                case Operators.Subtract:
+                    this.output = (float)this.value - this.modifier;
+                    break;
+                case Operators.Power:
+                    this.output = Mathf.Pow((float)this.value, this.modifier);
+                    break;
+                default:
+                    this.output = (float)this.value * this.modifier;
+                    break;
 
                 //Debug.Log(this.output);
             }

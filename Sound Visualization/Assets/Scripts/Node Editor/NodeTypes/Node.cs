@@ -18,7 +18,7 @@ namespace NodeEditor
         // what type of node is this, scale, pitch, plus operator etc.
         public string nodeName;
         // Value that is being passed through system.
-        public object value;
+        public float value;
         
         // Constructors. FIX CHAINING
         public Node()
