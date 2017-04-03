@@ -20,17 +20,17 @@ namespace NodeEditor
         public int ListenerPort = 8050; //the port you will be listening on
         private Osc handler; // Handles listening to max messages.
         // Id for the node.
-        private int uniqueNodeId = 0;
+        public int uniqueNodeId = 0;
         // List of properties from components
         Dictionary<CustomPropertyInfo, Component> propertyInfo = new Dictionary<CustomPropertyInfo, Component>();
         // List of members from components
         Dictionary<FieldInfo, Component> fieldInfo = new Dictionary<FieldInfo, Component>();
         // List of rectangle nodes.
-        List<Node> windows = new List<Node>();
+        public List<Node> windows = new List<Node>();
         // Temp List which holds which two nodes are to be connected.
-        List<int> windowsToAttach = new List<int>();
+        public List<int> windowsToAttach = new List<int>();
         // IDS of connected nodes.
-        List<int> attachedWindows = new List<int>();
+        public List<int> attachedWindows = new List<int>();
         bool draggingLeft = false;
         bool draggingRight = false;
         bool draggingUp = false;
@@ -48,11 +48,11 @@ namespace NodeEditor
             window.handler = new Osc();
             window.handler.init(udp);
             window.handler.SetAllMessageHandler(window.AllMessageHandler);
+
             window.Show();
 
         }
 
-        // Attempts to close the udp connection when the window is closed
         void OnDestroy()
         {
             udp.Close();
@@ -62,16 +62,13 @@ namespace NodeEditor
         void Callback(object obj)
         {
             Vector2 mousePos = new Vector2(10, 10);
-            string nodeRequested = "init";
+            string nodeRequested = obj.ToString();
             if (obj is CallBackObject)
             {
                 CallBackObject temp = obj as CallBackObject;
                 mousePos = temp.mousePosition;
                 nodeRequested = temp.callBackName;
             }
-            else
-                nodeRequested = obj.ToString();
-
             switch (nodeRequested)
             {
                 /*
@@ -97,11 +94,6 @@ namespace NodeEditor
                 case "GenericAudio":
                     windows.Add(new AudioNode(new Rect(mousePos.x, mousePos.y, 100, 100), "Insert Parameter", uniqueNodeId));
                     uniqueNodeId++;
-                    break;
-                case "MaxNode":
-                    Debug.Log("Not working right now");
-                    //windows.Add(new MaxNode(new Rect(mousePos.x, mousePos.y, 100, 100), "MaxNode"));
-                    //uniqueNodeId++;
                     break;
                 case "ControllerNode":
                     windows.Add(new ControllerNode(new Rect(mousePos.x, mousePos.y, 200, 400), "ControllerNode", uniqueNodeId));
@@ -144,15 +136,18 @@ namespace NodeEditor
                     }
                     break;
             }
+        }
 
+        // Handles node deletion
+        void NodeDeletion(object obj)
+        {
+            string nodeRequested = obj.ToString();
             if (nodeRequested == "DeleteAll")
             {
                 attachedWindows = new List<int>();
                 windows = new List<Node>();
                 uniqueNodeId = 0;
             }
-            // If node is requested to be deleted, find it and remove.
-
             else if (nodeRequested.Contains("Delete"))
             {
                 // Split string into two components.
@@ -162,6 +157,23 @@ namespace NodeEditor
                 DeleteNode(index);
 
             }
+        }
+
+        // Handles any callback deletions.
+        void DeleteConnection(object obj)
+        {
+            DeleteConnection temp = (DeleteConnection)obj;
+            Node first = temp.firstNode;
+            Node second = temp.secondNode;
+            // If node is requested to be deleted, find it and remove.
+            for (int i = 0; i < attachedWindows.Count; i += 2)
+            {
+                if (windows[attachedWindows[i]] == first && windows[attachedWindows[i + 1]] == second)
+                {
+                    attachedWindows.RemoveAt(i + 1);
+                    attachedWindows.RemoveAt(i);
+                }
+            }           
         }
 
         // Deletes a node
@@ -196,17 +208,8 @@ namespace NodeEditor
             }
         }
 
-        void StartMaxMsp(object obj)
-        {
-            //UDPPacketIO udp = new UDPPacketIO();
-            ////// Init the user datagram protocal.
-            ////// Can change the listen port for each different input?
-            //udp.init(window.RemoteIP, window.SendToPort, window.ListenerPort);
-            //window.handler = new Osc();
-            //window.handler.init(udp);
-            //window.handler.SetAllMessageHandler(window.AllMessageHandler);
 
-        }
+        // Updates each frame.
         void Update()
         {
             // For each window
@@ -275,6 +278,14 @@ namespace NodeEditor
 
         void OnGUI()
         {
+
+            // Draw right click menu and populate list. Also check for right click event.
+            Event currentEvent = Event.current;
+            // Create generic menu.
+            GenericMenu menu = new GenericMenu();
+            // Capture current mouse position.
+            Vector2 mousePos = currentEvent.mousePosition;
+
             // Keep drawing a line from selected rectangle to the mouse position
             if (windowsToAttach.Count == 1)
             {
@@ -284,7 +295,7 @@ namespace NodeEditor
                 if (windowsToAttach.Count == 1)
                     for (int i = 0; i < windows.Count; i++)
                         if (windows[i].id == windowsToAttach[0])
-                            DrawNodeCurve(windows[i].rectangle, (Vector3)Event.current.mousePosition);
+                            DrawNodeCurve(windows[i].rectangle, Event.current.mousePosition);
             }
 
             // If windowsToAttach is full, add to connected nodes and reset.
@@ -325,8 +336,13 @@ namespace NodeEditor
                     if (windows[i].id == attachedWindows[x + 1])
                         secondNodeIndex = i;
                 }
-
                 DrawNodeCurve(windows[firstNodeIndex].rectangle, windows[secondNodeIndex].rectangle);
+                bool col = DetectCursorLineDetection(mousePos, windows[firstNodeIndex].rectangle, windows[secondNodeIndex].rectangle);
+                if (col)
+                {
+                    menu.AddItem(new GUIContent("DeleteConnection"), false, DeleteConnection, new DeleteConnection(windows[firstNodeIndex], windows[secondNodeIndex]));
+                    menu.AddSeparator("");
+                }
                 if (windows[firstNodeIndex] is OperatorNode)
                 {
                     // Cast to operator node
@@ -337,40 +353,30 @@ namespace NodeEditor
                 else
                 {
                     // Pass along the value for the connection, from left to right
-                    windows[secondNodeIndex].value = windows[firstNodeIndex].value;
+                    if(windows[firstNodeIndex] != null)
+                        windows[secondNodeIndex].value = windows[firstNodeIndex].value;
                 }
             }
-
-            // Draw right click menu and populate list. Also check for right click event.
-            Event currentEvent = Event.current;
-            // Create generic menu.
-            GenericMenu menu = new GenericMenu();
-            // Capture current mouse position.
-            Vector2 mousePos = currentEvent.mousePosition;
-
             // If right click, generate window.
 
             if (currentEvent.type == EventType.ContextClick)
             {
-
                 // Add delete option.
                 for (int i = 0; i < windows.Count; i++)
                 {
                     if (windows[i].rectangle.Contains(mousePos))
                     {
-                        menu.AddItem(new GUIContent("Delete"), false, Callback, "Delete:" + windows[i].id);
+                        menu.AddItem(new GUIContent("Delete"), false, NodeDeletion, "Delete:" + windows[i].id);
                         menu.AddSeparator("");
                     }
-
                 }
+
                 // If right click was pressed, stop trying to create a connection
                 windowsToAttach.Clear();
 
                 // Now create the menu, add items and show it
                 menu.AddItem(new GUIContent("ControllerNode"), false, Callback, new CallBackObject("ControllerNode", mousePos));
                 menu.AddSeparator("");
-                //menu.AddItem(new GUIContent("VisualNodes/"), false, Callback, "V");
-                //menu.AddSeparator("");
                 menu.AddItem(new GUIContent("Operator"), false, Callback, new CallBackObject("Operator", mousePos));
                 menu.AddSeparator("");
                 menu.AddItem(new GUIContent("AudioNodes/Random"), false, Callback, new CallBackObject("Random", mousePos));
@@ -381,48 +387,35 @@ namespace NodeEditor
                 menu.AddSeparator("");
                 menu.AddItem(new GUIContent("File/Save"), false, SaveWindow, "Save");
                 menu.AddItem(new GUIContent("File/Load"), false, LoadWindow, "Load");
-                menu.AddItem(new GUIContent("File/StartMaxMSP"), false, StartMaxMsp, "Start Max");
-                menu.AddItem(new GUIContent("File/DeleteAll"), false, Callback, "DeleteAll");
+                menu.AddItem(new GUIContent("File/DeleteAll"), false, NodeDeletion, "DeleteAll");
+                menu.AddSeparator("");
 
-                // Assume controller does not exist
-                bool delete = true;
-                for (int i = 0; i < windows.Count; i++)
+                // What does this part do?
+                List<CustomPropertyInfo> pi = new List<CustomPropertyInfo>(propertyInfo.Keys);
+
+                foreach (CustomPropertyInfo currentPi in pi)
                 {
-                    if (windows[i] is ControllerNode)
+                    Component theComponent = new Component();
+                    propertyInfo.TryGetValue(currentPi, out theComponent);
+                    menu.AddItem(new GUIContent("VisualNodes/" + theComponent.gameObject.name + "/" + currentPi.propertyInfo.DeclaringType + "/" + currentPi.propertyInfo.Name), false, Callback, currentPi.propertyInfo.Name + currentPi.parent);
+
+                    // Special check for Renderer
+                    if (currentPi.propertyInfo.DeclaringType == typeof(Renderer))
                     {
-                        // Controller exists
-                        delete = false;
-                    }
-                } 
+                        menu.AddItem(new GUIContent("VisualNodes/" + theComponent.gameObject.name + "/" + currentPi.propertyInfo.DeclaringType + "/Material"), false, Callback, "Material");
 
-                // If controller exists
-                if (!delete)
-                {
-                    // Dynamically add components to menu
-                    List<CustomPropertyInfo> pi = new List<CustomPropertyInfo>(propertyInfo.Keys);
-
-                    foreach (CustomPropertyInfo currentPi in pi)
-                    {
-                        Component theComponent = new Component();
-                        propertyInfo.TryGetValue(currentPi, out theComponent);
-                        menu.AddItem(new GUIContent("VisualNodes/" + theComponent.gameObject.name + "/" + currentPi.propertyInfo.DeclaringType + "/" + currentPi.propertyInfo.Name), false, Callback, currentPi.propertyInfo.Name + currentPi.parent);
-
-                        // Special check for Renderer
-                        if (currentPi.propertyInfo.DeclaringType == typeof(Renderer))
-                        {
-                            menu.AddItem(new GUIContent("VisualNodes/" + theComponent.gameObject.name + "/" + currentPi.propertyInfo.DeclaringType + "/Material"), false, Callback, "Material");
-                        }
-                    }
-                    // Dynamically add scripts to menu
-                    List<FieldInfo> fi = new List<FieldInfo>(fieldInfo.Keys);
-
-                    foreach (FieldInfo currentFi in fi)
-                    {
-                        Component theComponent = new Component();
-                        fieldInfo.TryGetValue(currentFi, out theComponent);
-                        menu.AddItem(new GUIContent("VisualNodes/" + theComponent.gameObject.name + "/" + currentFi.DeclaringType + "/" + currentFi.Name), false, Callback, currentFi.Name);
                     }
                 }
+
+                List<FieldInfo> fi = new List<FieldInfo>(fieldInfo.Keys);
+
+                foreach (FieldInfo currentFi in fi)
+                {
+                    Component theComponent = new Component();
+                    fieldInfo.TryGetValue(currentFi, out theComponent);
+                    menu.AddItem(new GUIContent("VisualNodes/" + theComponent.gameObject.name + "/" + currentFi.DeclaringType + "/" + currentFi.Name), false, Callback, currentFi.Name);
+                }
+
                 menu.ShowAsContext();
                 currentEvent.Use();
             }
@@ -531,8 +524,7 @@ namespace NodeEditor
                 // It is stored to a temp variable to prevent user from messing with the audio parameters. Change
                 string t = "No Value...";
                 //Debug.Log(windows[id].value);
-                if (windows[id].value != null)
-                    t = windows[id].value.ToString();
+                t = windows[id].value.ToString();
                 GUILayout.Label(t);
             }
 
@@ -639,59 +631,52 @@ namespace NodeEditor
                 // Cast and add TextField for value
                 VisualNode temp = (VisualNode)windows[id];
                 //temp.UpdateVisual(propertyInfo);
-
-                if (temp.value != null)
+                //Debug.Log(temp.value.GetType());
+                // Vectors are displayed differently than floats and ints
+                if (temp.propertyInfo != null)
                 {
-
-                    //Debug.Log(temp.value.GetType());
-                    // Vectors are displayed differently than floats and ints
-                    if (temp.propertyInfo != null)
+                    if (temp.propertyInfo.PropertyType == typeof(Vector3))
                     {
-                        if (temp.propertyInfo.PropertyType == typeof(Vector3))
-                        {
+                        // Cast object to Vector3
+                        Vector3 vector3Value = (Vector3)temp.propertyInfo.GetValue(temp.compObj, null);
 
-                            // Cast object to Vector3
-                            Vector3 vector3Value = (Vector3)temp.propertyInfo.GetValue(temp.compObj, null);
+                        // Display Vector3
+                        EditorGUILayout.Vector3Field("", vector3Value);
 
-                            // Display Vector3
-                            EditorGUILayout.Vector3Field("", vector3Value);
-
-                            // Toggle boxes
-                            EditorGUILayout.BeginHorizontal();
-                            temp.Vectors[0] = EditorGUILayout.Toggle(temp.Vectors[0]);
-                            temp.Vectors[1] = EditorGUILayout.Toggle(temp.Vectors[1]);
-                            temp.Vectors[2] = EditorGUILayout.Toggle(temp.Vectors[2]);
-                            EditorGUILayout.EndHorizontal();
-                        }
-                        else
-                        {
-                            EditorGUILayout.FloatField((float)temp.value);
-                        }
+                        // Toggle boxes
+                        EditorGUILayout.BeginHorizontal();
+                        temp.Vectors[0] = EditorGUILayout.Toggle(temp.Vectors[0]);
+                        temp.Vectors[1] = EditorGUILayout.Toggle(temp.Vectors[1]);
+                        temp.Vectors[2] = EditorGUILayout.Toggle(temp.Vectors[2]);
+                        EditorGUILayout.EndHorizontal();
                     }
-                    if (temp.fieldInfo != null)
+                    else
                     {
-                        if (temp.fieldInfo.FieldType == typeof(Vector3))
-                        {
-                            // Cast object to Vector3
-                            Vector3 vector3Value = (Vector3)temp.fieldInfo.GetValue(temp.compObj);
-
-                            // Display Vector3
-                            EditorGUILayout.Vector3Field("", vector3Value);
-
-                            // Toggle boxes
-                            EditorGUILayout.BeginHorizontal();
-                            temp.Vectors[0] = EditorGUILayout.Toggle(temp.Vectors[0]);
-                            temp.Vectors[1] = EditorGUILayout.Toggle(temp.Vectors[1]);
-                            temp.Vectors[2] = EditorGUILayout.Toggle(temp.Vectors[2]);
-                            EditorGUILayout.EndHorizontal();
-                        }
-                        else
-                        {
-                            EditorGUILayout.FloatField((float)temp.value);
-                        }
+                        EditorGUILayout.FloatField((float)temp.value);
                     }
                 }
+                if (temp.fieldInfo != null)
+                {
+                    if (temp.fieldInfo.FieldType == typeof(Vector3))
+                    {
+                        // Cast object to Vector3
+                        Vector3 vector3Value = (Vector3)temp.fieldInfo.GetValue(temp.compObj);
 
+                        // Display Vector3
+                        EditorGUILayout.Vector3Field("", vector3Value);
+
+                        // Toggle boxes
+                        EditorGUILayout.BeginHorizontal();
+                        temp.Vectors[0] = EditorGUILayout.Toggle(temp.Vectors[0]);
+                        temp.Vectors[1] = EditorGUILayout.Toggle(temp.Vectors[1]);
+                        temp.Vectors[2] = EditorGUILayout.Toggle(temp.Vectors[2]);
+                        EditorGUILayout.EndHorizontal();
+                    }
+                    else
+                    {
+                        EditorGUILayout.FloatField((float)temp.value);
+                    }
+                }
             }
             else if (windows[id] is OperatorNode)
             {
@@ -806,6 +791,21 @@ namespace NodeEditor
             Handles.DrawAAConvexPolygon(points);
         }
 
+        // Detect if cursor is on line.
+        bool DetectCursorLineDetection(Vector3 point, Rect start, Rect end)
+        {
+            Vector3 startPos = new Vector3(start.x + start.width, start.y + start.height / 2, 0);
+            Vector3 endPos = new Vector3(end.x, end.y + end.height / 2, 0);
+            Vector3 startTan = startPos + Vector3.right * 50;
+            Vector3 endTan = endPos + Vector3.left * 50;
+
+            float res = HandleUtility.DistancePointBezier(point, startPos, endPos, startTan, endTan);
+            if (res < 9)
+                return true;
+
+            return false;
+        }    
+
         private Rect HorizResizer(Rect window, bool right = true, float detectionRange = 8f)
         {
             detectionRange *= 0.5f;
@@ -911,86 +911,39 @@ namespace NodeEditor
         // This handles the incoming max messages and sends it to the correct audio node.
         public void AllMessageHandler(OscMessage oscMessage)
         {
-            //Debug.Log(oscMessage.Address);
             // Where do send it too.
             string[] incAddress = oscMessage.Address.Split('/');
             // Value it contains.
             float incValue = (float)oscMessage.Values[0];
-
             // Search each audio node to find where to send it.
             for (int i = 0; i < windows.Count; i++)
-            {
                 // First check if correct class type.
                 if (windows[i] is AudioNode)
-                {
                     // If windows contains name to this address. - Make it more accurate.
                     if (incAddress[1].ToLower().Equals(windows[i].nodeName.ToLower()))
-                    {
-                        //Debug.Log("Found");
-                        windows[i].value = incValue;
-                        //Debug.Log(windows[i].value);
-
-                    }
-
-                }
-            }
+                        windows[i].value = (float)incValue;
         }
 
 
         // Serialize nodes and save to file - Add option to what file later.
         public void SaveWindow(object obj)
         {
-            // Create manager class which stores neccessary data.
-            NodeManager saveData = new NodeManager();
-            saveData.attachedWindows = attachedWindows;
-            saveData.uniqueNodeId = uniqueNodeId;
-            // Save Nodes to correct list.
-            for (int i = 0; i < windows.Count; i++)
-            {
-                if (windows[i] is AudioNode)
-                    saveData.auNodes.Add((AudioNode)windows[i]);
-                if (windows[i] is VisualNode)
-                    saveData.viNodes.Add((VisualNode)windows[i]);
-                if (windows[i] is OperatorNode)
-                    saveData.oNodes.Add((OperatorNode)windows[i]);
-                if (windows[i] is MaterialNode)
-                    saveData.matNodes.Add((MaterialNode)windows[i]);
-                if (windows[i] is ControllerNode)
-                    saveData.cNodes.Add((ControllerNode)windows[i]);
-                if (windows[i] is MaxNode)
-                    saveData.mNodes.Add((MaxNode)windows[i]);
-                if (windows[i] is RandomGeneratorNode)
-                    saveData.rNodes.Add((RandomGeneratorNode)windows[i]);
-            }
-            saveData.windowsToAttach = windowsToAttach;
-            // Convert manager to json format.
-            string json = EditorJsonUtility.ToJson(saveData);
-            // Get save path from user.
-            string filePath = EditorUtility.SaveFilePanel("Saving editor", "..//Assets//Saves", "Graph", "Sav");
-            if (filePath.Length != 0)
-            {
-                // Write file to file path.
-                File.WriteAllText(filePath, json);
-                Debug.Log("File saved");
-            }
+            NodeManager saveData = new NodeManager(this);
+            NodeEditorUtil.SaveFile(saveData);
+            Debug.Log("File saved");
         }
 
 
         // Load serialized file - Add option what file later.
         public void LoadWindow(object obj)
         {
-            // Get file path from user.
-            string filePath = EditorUtility.OpenFilePanel("Saves", ".//Assets//Saves", "Sav");
-            if (filePath.Length != 0)
+            // Load file
+            NodeManager load = NodeEditorUtil.LoadFile();
+            //if suitable file.
+            if (load != null)
             {
-                // Read contents from file path.
-                string json = File.ReadAllText(filePath);
-                // COnvert json message into NodeManager class.
-                NodeManager load = new NodeManager();
-                EditorJsonUtility.FromJsonOverwrite(json, load);
                 // Reset variables 
                 attachedWindows = load.attachedWindows;
-                //windows = load.windows;
                 windows = new List<Node>();
                 foreach (AudioNode x in load.auNodes)
                     windows.Add(x);

@@ -24,5 +24,32 @@ namespace NodeEditor
         public List<int> windowsToAttach = new List<int>();
         // IDS of connected nodes.
         public List<int> attachedWindows = new List<int>();
+
+        public NodeManager(){ }
+        // Take node editor and take information to serialize.
+        public NodeManager(NodeEditor ne)
+        {
+            attachedWindows = ne.attachedWindows;
+            uniqueNodeId = ne.uniqueNodeId;
+            windowsToAttach = ne.windowsToAttach;
+            // Save Nodes to correct list.
+            for (int i = 0; i < ne.windows.Count; i++)
+            {
+                if (ne.windows[i] is AudioNode)
+                    auNodes.Add((AudioNode)ne.windows[i]);
+                if (ne.windows[i] is VisualNode)
+                    viNodes.Add((VisualNode)ne.windows[i]);
+                if (ne.windows[i] is OperatorNode)
+                    oNodes.Add((OperatorNode)ne.windows[i]);
+                if (ne.windows[i] is MaterialNode)
+                    matNodes.Add((MaterialNode)ne.windows[i]);
+                if (ne.windows[i] is ControllerNode)
+                    cNodes.Add((ControllerNode)ne.windows[i]);
+                if (ne.windows[i] is MaxNode)
+                    mNodes.Add((MaxNode)ne.windows[i]);
+                if (ne.windows[i] is RandomGeneratorNode)
+                    rNodes.Add((RandomGeneratorNode)ne.windows[i]);
+            }
+        }
     }
 }

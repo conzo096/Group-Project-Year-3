@@ -36,7 +36,7 @@ namespace NodeEditor
 
         // Calculates the output
         public void CalculateOutput()
-        {  
+        {
             switch (currentOperator)
             {
                 // Add
@@ -65,10 +65,8 @@ namespace NodeEditor
                 default:
                     output = value;
                     break;
-
             }
         }
-
         // Finds out which operator to use
         public void UpdateState(Operators currentOperator)
         {
