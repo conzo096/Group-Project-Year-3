@@ -18,13 +18,12 @@ using System.Runtime.Serialization;
 
 namespace NodeEditor
 {
-    
 
     [Serializable]
     public class NodeEditor : EditorWindow
     {
-        public List<VisualObject> visualObjects = new List<VisualObject>();
-
+        // UDP information
+        public static UDPPacketIO udp;
         // Object field for controller node
         UnityEngine.Object fromObjectField = new UnityEngine.Object();
         //Operators display = Operators.Multiply;
@@ -50,14 +49,13 @@ namespace NodeEditor
         bool draggingUp = false;
         bool draggingDown = false;
 
-
         [MenuItem("Window/Node Editor")]
         static void Init()
         {
             NodeEditor window = (NodeEditor)GetWindow(typeof(NodeEditor));
-            UDPPacketIO udp = new UDPPacketIO();
-            //// Init the user datagram protocal.
-            //// Can change the listen port for each different input?
+            // Init the user datagram protocal.
+            udp = new UDPPacketIO();
+            // Can change the listen port for each different input?
             udp.init(window.RemoteIP, window.SendToPort, window.ListenerPort);
             window.handler = new Osc();
             window.handler.init(udp);
@@ -65,6 +63,12 @@ namespace NodeEditor
 
             window.Show();
 
+        }
+
+        // Close the udp connection when the editor window is closed
+        void OnDestroy()
+        {
+            udp.Close();
         }
 
         // called when a right-click option is selected.
@@ -537,19 +541,9 @@ namespace NodeEditor
             {
                 // Cast and add TextArea
                 ControllerNode temp = (ControllerNode)windows[id];
-                //temp.gameObjectTag = GUILayout.TextArea(temp.gameObjectTag);
-                // Disable GUI for object field
-                //if (fromObjectField != null)
-                //    GUI.enabled = false;
+
                 fromObjectField = EditorGUILayout.ObjectField(fromObjectField, typeof(UnityEngine.Object), true);
 
-
-                // Enable GUI for rest
-                //if (fromObjectField != null)
-                //    GUI.enabled = true;
-                // Link visual object to given visual node, only once
-                //if (temp.visual == null)
-                //{
                 temp.visual = fromObjectField;
                 temp.Test();
 
@@ -557,13 +551,6 @@ namespace NodeEditor
 
                 if (temp.visual != null)
                 {
-                    //VisualObject vo = new VisualObject(fromObjectField.name);
-                    //
-                    //if (!visualObjects.Contains(vo))
-                    //{
-                    //    visualObjects.Add(vo);
-                    //    //Debug.Log("adding vo");
-                    //}
 
                     List<Component> keys = new List<Component>(temp.componentsDictionary.Keys);
                     foreach (Component component in keys)
@@ -578,9 +565,6 @@ namespace NodeEditor
 
                         if (value)
                         {
-                            ////TODO: loop through all visualobjects and access their info (will possibly remove this)
-                            //foreach (VisualObject currentVisualObject in visualObjects)
-                            //{
 
                             // For most components
                             foreach (PropertyInfo pi in component.GetType().GetProperties())
@@ -599,12 +583,6 @@ namespace NodeEditor
                                     else
                                         // Add if not
                                         propertyInfo.Add(customPi, component);
-                                    //Debug.Log(propertyInfo.Keys.Count);
-
-                                    //if (!(currentVisualObject.propertyInfo.ContainsKey(pi)))
-                                    //    currentVisualObject.propertyInfo.Add(pi, component);
-
-                                    //Debug.Log(currentVisualObject.propertyInfo);
                                 }
                             }
 
@@ -620,12 +598,8 @@ namespace NodeEditor
                                         fieldInfo[fi] = component;
                                     else
                                         fieldInfo.Add(fi, component);
-
-                                    //if (!(currentVisualObject.fieldInfo.ContainsKey(fi)))
-                                    //    currentVisualObject.fieldInfo.Add(fi, component);
                                 }
                             }
-                            //}
                         }
                     }
                 }
