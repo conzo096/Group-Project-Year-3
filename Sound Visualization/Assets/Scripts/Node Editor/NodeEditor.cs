@@ -203,7 +203,29 @@ namespace NodeEditor
             {
                 if (windows[i].id == index)
                 {
-                    windows.RemoveAt(i);
+                    // Debug.Log("Deleting a: " + (windows[i]).GetType());
+
+                    // If a controller node is deleted, delete every visual node by recursively calling this method.
+                    if (windows[i] is ControllerNode)
+                    {
+                        // Remove current node
+                        windows.RemoveAt(i);
+                        // Recursion - Loop through windows
+                        for (int j = windows.Count - 1; j >= 0; j--)
+                        {
+                            // If it's a visual node
+                            if (windows[i] is VisualNode)
+                            {
+                                // Delete it
+                                DeleteNode(windows[i].id);
+                            }
+                        }
+                    }
+                    // Simply remove current node
+                    else
+                    {
+                        windows.RemoveAt(i);
+                    }
                 }
             }
         }
@@ -409,12 +431,14 @@ namespace NodeEditor
                     {
                         Component theComponent = new Component();
                         propertyInfo.TryGetValue(currentPi, out theComponent);
-                        menu.AddItem(new GUIContent("VisualNodes/" + theComponent.gameObject.name + "/" + currentPi.propertyInfo.DeclaringType + "/" + currentPi.propertyInfo.Name), false, Callback, currentPi.propertyInfo.Name + currentPi.parent);
+                        menu.AddItem(new GUIContent("VisualNodes/" + theComponent.gameObject.name + "/" + currentPi.propertyInfo.DeclaringType + "/" + currentPi.propertyInfo.Name),
+                            false, Callback, new CallBackObject(currentPi.propertyInfo.Name + currentPi.parent, mousePos));
 
                         // Special check for Renderer
                         if (currentPi.propertyInfo.DeclaringType == typeof(Renderer))
                         {
-                            menu.AddItem(new GUIContent("VisualNodes/" + theComponent.gameObject.name + "/" + currentPi.propertyInfo.DeclaringType + "/Material"), false, Callback, "Material");
+                            menu.AddItem(new GUIContent("VisualNodes/" + theComponent.gameObject.name + "/" + currentPi.propertyInfo.DeclaringType + "/Material"),
+                                false, Callback, new CallBackObject("Material", mousePos));
 
                         }
                     }
@@ -425,9 +449,11 @@ namespace NodeEditor
                     {
                         Component theComponent = new Component();
                         fieldInfo.TryGetValue(currentFi, out theComponent);
-                        menu.AddItem(new GUIContent("VisualNodes/" + theComponent.gameObject.name + "/" + currentFi.DeclaringType + "/" + currentFi.Name), false, Callback, currentFi.Name);
+                        menu.AddItem(new GUIContent("VisualNodes/" + theComponent.gameObject.name + "/" + currentFi.DeclaringType + "/" + currentFi.Name),
+                            false, Callback, new CallBackObject(currentFi.Name, mousePos));
                     }
                 }
+
                 menu.ShowAsContext();
                 currentEvent.Use();
             }
@@ -545,34 +571,14 @@ namespace NodeEditor
             {
                 // Cast and add TextArea
                 ControllerNode temp = (ControllerNode)windows[id];
-                //temp.gameObjectTag = GUILayout.TextArea(temp.gameObjectTag);
-                // Disable GUI for object field
-                //if (fromObjectField != null)
-                //    GUI.enabled = false;
+
                 fromObjectField = EditorGUILayout.ObjectField(fromObjectField, typeof(UnityEngine.Object), true);
 
-
-                // Enable GUI for rest
-                //if (fromObjectField != null)
-                //    GUI.enabled = true;
-                // Link visual object to given visual node, only once
-                //if (temp.visual == null)
-                //{
                 temp.visual = fromObjectField;
                 temp.LoadComponents();
 
-                //}
-
                 if (temp.visual != null)
                 {
-                    //VisualObject vo = new VisualObject(fromObjectField.name);
-                    //
-                    //if (!visualObjects.Contains(vo))
-                    //{
-                    //    visualObjects.Add(vo);
-                    //    //Debug.Log("adding vo");
-                    //}
-
                     List<Component> keys = new List<Component>(temp.componentsDictionary.Keys);
                     foreach (Component component in keys)
                     {
@@ -586,9 +592,6 @@ namespace NodeEditor
 
                         if (value)
                         {
-                            ////TODO: loop through all visualobjects and access their info (will possibly remove this)
-                            //foreach (VisualObject currentVisualObject in visualObjects)
-                            //{
 
                             // For most components
                             foreach (PropertyInfo pi in component.GetType().GetProperties())
@@ -607,12 +610,6 @@ namespace NodeEditor
                                     else
                                         // Add if not
                                         propertyInfo.Add(customPi, component);
-                                    //Debug.Log(propertyInfo.Keys.Count);
-
-                                    //if (!(currentVisualObject.propertyInfo.ContainsKey(pi)))
-                                    //    currentVisualObject.propertyInfo.Add(pi, component);
-
-                                    //Debug.Log(currentVisualObject.propertyInfo);
                                 }
                             }
 
@@ -628,12 +625,8 @@ namespace NodeEditor
                                         fieldInfo[fi] = component;
                                     else
                                         fieldInfo.Add(fi, component);
-
-                                    //if (!(currentVisualObject.fieldInfo.ContainsKey(fi)))
-                                    //    currentVisualObject.fieldInfo.Add(fi, component);
                                 }
                             }
-                            //}
                         }
                     }
                 }
@@ -642,9 +635,8 @@ namespace NodeEditor
             {
                 // Cast and add TextField for value
                 VisualNode temp = (VisualNode)windows[id];
-                //temp.UpdateVisual(propertyInfo);
-                //Debug.Log(temp.value.GetType());
-                // Vectors are displayed differently than floats and ints
+
+                // Vectors are displayed differently from floats and ints
                 if (temp.propertyInfo != null)
                 {
                     if (temp.propertyInfo.PropertyType == typeof(Vector3))
