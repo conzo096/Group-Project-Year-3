@@ -173,7 +173,7 @@ namespace NodeEditor
                     attachedWindows.RemoveAt(i + 1);
                     attachedWindows.RemoveAt(i);
                 }
-            }           
+            }
         }
 
         // Deletes a node
@@ -353,7 +353,7 @@ namespace NodeEditor
                 else
                 {
                     // Pass along the value for the connection, from left to right
-                    if(windows[firstNodeIndex] != null)
+                    if (windows[firstNodeIndex] != null)
                         windows[secondNodeIndex].value = windows[firstNodeIndex].value;
                 }
             }
@@ -389,33 +389,45 @@ namespace NodeEditor
                 menu.AddItem(new GUIContent("File/Load"), false, LoadWindow, "Load");
                 menu.AddItem(new GUIContent("File/DeleteAll"), false, NodeDeletion, "DeleteAll");
                 menu.AddSeparator("");
-
-                // What does this part do?
-                List<CustomPropertyInfo> pi = new List<CustomPropertyInfo>(propertyInfo.Keys);
-
-                foreach (CustomPropertyInfo currentPi in pi)
+                // Assume controller does not exist
+                bool delete = true;
+                for (int i = 0; i < windows.Count; i++)
                 {
-                    Component theComponent = new Component();
-                    propertyInfo.TryGetValue(currentPi, out theComponent);
-                    menu.AddItem(new GUIContent("VisualNodes/" + theComponent.gameObject.name + "/" + currentPi.propertyInfo.DeclaringType + "/" + currentPi.propertyInfo.Name), false, Callback, currentPi.propertyInfo.Name + currentPi.parent);
-
-                    // Special check for Renderer
-                    if (currentPi.propertyInfo.DeclaringType == typeof(Renderer))
+                    if (windows[i] is ControllerNode)
                     {
-                        menu.AddItem(new GUIContent("VisualNodes/" + theComponent.gameObject.name + "/" + currentPi.propertyInfo.DeclaringType + "/Material"), false, Callback, "Material");
-
+                        // Controller exists
+                        delete = false;
                     }
                 }
 
-                List<FieldInfo> fi = new List<FieldInfo>(fieldInfo.Keys);
-
-                foreach (FieldInfo currentFi in fi)
+                // If controller exists
+                if (!delete)
                 {
-                    Component theComponent = new Component();
-                    fieldInfo.TryGetValue(currentFi, out theComponent);
-                    menu.AddItem(new GUIContent("VisualNodes/" + theComponent.gameObject.name + "/" + currentFi.DeclaringType + "/" + currentFi.Name), false, Callback, currentFi.Name);
-                }
+                    List<CustomPropertyInfo> pi = new List<CustomPropertyInfo>(propertyInfo.Keys);
 
+                    foreach (CustomPropertyInfo currentPi in pi)
+                    {
+                        Component theComponent = new Component();
+                        propertyInfo.TryGetValue(currentPi, out theComponent);
+                        menu.AddItem(new GUIContent("VisualNodes/" + theComponent.gameObject.name + "/" + currentPi.propertyInfo.DeclaringType + "/" + currentPi.propertyInfo.Name), false, Callback, currentPi.propertyInfo.Name + currentPi.parent);
+
+                        // Special check for Renderer
+                        if (currentPi.propertyInfo.DeclaringType == typeof(Renderer))
+                        {
+                            menu.AddItem(new GUIContent("VisualNodes/" + theComponent.gameObject.name + "/" + currentPi.propertyInfo.DeclaringType + "/Material"), false, Callback, "Material");
+
+                        }
+                    }
+
+                    List<FieldInfo> fi = new List<FieldInfo>(fieldInfo.Keys);
+
+                    foreach (FieldInfo currentFi in fi)
+                    {
+                        Component theComponent = new Component();
+                        fieldInfo.TryGetValue(currentFi, out theComponent);
+                        menu.AddItem(new GUIContent("VisualNodes/" + theComponent.gameObject.name + "/" + currentFi.DeclaringType + "/" + currentFi.Name), false, Callback, currentFi.Name);
+                    }
+                }
                 menu.ShowAsContext();
                 currentEvent.Use();
             }
@@ -804,7 +816,7 @@ namespace NodeEditor
                 return true;
 
             return false;
-        }    
+        }
 
         private Rect HorizResizer(Rect window, bool right = true, float detectionRange = 8f)
         {
