@@ -1,4 +1,5 @@
-﻿using System;
+﻿/* Node that simulated the behaviour of the AudioNode. Random numbers are generated instead of values being passed in from Max MSP. */
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,7 +7,7 @@ using UnityEngine;
 
 namespace NodeEditor
 {
-    // Node for testing
+    
     [Serializable]
     public class RandomGeneratorNode : Node
     {

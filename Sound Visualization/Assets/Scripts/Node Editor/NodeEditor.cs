@@ -542,7 +542,7 @@ namespace NodeEditor
                 //if (temp.visual == null)
                 //{
                 temp.visual = fromObjectField;
-                temp.Test();
+                temp.LoadComponents();
 
                 //}
 
@@ -902,7 +902,7 @@ namespace NodeEditor
             // Where do send it too.
             string[] incAddress = oscMessage.Address.Split('/');
             // Value it contains.
-            object incValue = oscMessage.Values[0];
+            float incValue = (float)oscMessage.Values[0];
 
             // Search each audio node to find where to send it.
             for (int i = 0; i < windows.Count; i++)

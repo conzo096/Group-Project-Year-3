@@ -1,10 +1,11 @@
-﻿using System.Collections;
+﻿/* NoiseRingController.cs
+ * Attach to ring (or any other object really) with procedural material 
+ * Allows for editing the parameters of the procedural material, but also the transforms of the object */
+
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-/* NoiseRingController.cs by Emmanuel Miras. Last edited 09/03/17
- * Attach to ring (or any other object really) with procedural material 
- * Allows for editing the parameters of the procedural material, but also the transforms of the object
-*/
+
 
 public enum OscType
 {

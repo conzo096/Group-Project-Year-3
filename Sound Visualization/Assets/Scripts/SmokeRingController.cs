@@ -1,9 +1,9 @@
-﻿using UnityEngine;
-using System.Collections;
-/* SmokeRingController.cs by Emmanuel Miras. Last edited 09/03/17
+﻿/* SmokeRingController.cs
  * Attach to GameObject with a particle system. 
- * Controls a ring shaped particle system
-*/
+ * Controls a ring shaped particle system */
+
+using UnityEngine;
+using System.Collections;
 
 public class SmokeRingController : MonoBehaviour
 {

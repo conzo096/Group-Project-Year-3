@@ -1,4 +1,5 @@
-﻿using System;
+﻿/* AudioNode.cs, used to pass on values from Max MSP to Unity. */
+using System;
 using UnityEngine;
 
 namespace NodeEditor

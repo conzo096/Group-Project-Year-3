@@ -1,4 +1,5 @@
-﻿using System;
+﻿/* Base node class. */
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -7,7 +8,7 @@ using UnityEngine;
 namespace NodeEditor
 {
 
-    // Base node class.
+    
     [Serializable]
     public abstract class Node
     {
@@ -18,7 +19,7 @@ namespace NodeEditor
         // what type of node is this, scale, pitch, plus operator etc.
         public string nodeName;
         // Value that is being passed through system.
-        public object value;
+        public float value;
         
         // Constructors. FIX CHAINING
         public Node()
