@@ -32,5 +32,4 @@ sysinfo.txt
 *.unitypackage
 UI/UI Prototype/Library/metadata/
 =======
-*.meta
 *.info
