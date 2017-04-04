@@ -10,6 +10,7 @@ namespace NodeEditor
     [Serializable]
     public class NodeEditor : EditorWindow
     {
+        private Osc handler; // Handles listening to max messages.
         public static UDPPacketIO udp;
         // Object field for controller node
         UnityEngine.Object fromObjectField = new UnityEngine.Object();
@@ -18,7 +19,6 @@ namespace NodeEditor
         public string RemoteIP = /*"146.176.164.4";*/ "127.0f.0.1f"; // signifies a local host (if testing locally
         public int SendToPort = 9000; //the port you will be sending from
         public int ListenerPort = 8050; //the port you will be listening on
-        private Osc handler; // Handles listening to max messages.
         // Id for the node.
         public int uniqueNodeId = 0;
         // List of properties from components
