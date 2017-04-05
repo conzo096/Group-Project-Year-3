@@ -39,7 +39,10 @@ namespace NodeEditor
                         // Update selected options.
                         for (int i = 0; i < 4; i++)
                             if (Vectors[i] == true)
+                            {
+                                //emissionCol[i] = Mathf.Lerp(emissionCol[i],value, Time.deltaTime);
                                 emissionCol[i] = value;
+                            }
                         material.SetColor("_" + methodToSearch, emissionCol);
                     }
                     else
@@ -47,7 +50,10 @@ namespace NodeEditor
                         // Update selected options.
                         for (int i = 0; i < 4; i++)
                             if (Vectors[i] == true)
-                                col[i] = value;
+                            {
+                                //col[i] = Mathf.Lerp(col[i], value, Time.deltaTime);
+                                 col[i] = value;
+                            }
                         material.SetColor("_" + methodToSearch, col);
                     }
                     

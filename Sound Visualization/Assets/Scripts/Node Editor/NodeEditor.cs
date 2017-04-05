@@ -32,9 +32,6 @@ namespace NodeEditor
         // IDS of connected nodes.
         public List<int> attachedWindows = new List<int>();
 
-        // Handles material colours.
-        MatUtil matCols = new MatUtil();
-
         // Handles Node resizing - CURRENTLY DISABLED.
         bool draggingLeft = false;
         bool draggingRight = false;
@@ -726,7 +723,7 @@ namespace NodeEditor
                 if (temp.methodToSearch != null && temp.material != null)
                 {
                     // Temporary solution. - if trying to modify the colour.
-                    if (temp.methodToSearch.ToLower() == "color")
+                    if (temp.methodToSearch.ToLower().Contains("color"))
                     {
                         
                         // Display Color
