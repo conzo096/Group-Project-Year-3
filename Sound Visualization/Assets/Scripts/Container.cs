@@ -199,16 +199,12 @@ public class Container : MonoBehaviour
     public float resolution;
     public float threshold;
     public ComputeShader computeShader;
-    public ComputeShader normalComputeShader;
     public bool calculateNormalsWithUnityBuiltIn;
     public bool editedMethod;
 
     private CubeGrid grid;
 
     private Mesh mesh;
-
-    private ComputeBuffer vertexEntryBuffer;
-    private ComputeBuffer normalBuffer;
 
     public void Start()
     {

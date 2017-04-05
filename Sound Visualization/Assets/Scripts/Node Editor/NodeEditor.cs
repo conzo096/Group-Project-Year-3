@@ -168,7 +168,7 @@ namespace NodeEditor
             // If node is requested to be deleted, find it and remove.
             for (int i = 0; i < attachedWindows.Count; i += 2)
             {
-                if (windows[attachedWindows[i]] == first && windows[attachedWindows[i + 1]] == second)
+                if (attachedWindows[i] == first.id && attachedWindows[i + 1] == second.id)
                 {
                     attachedWindows.RemoveAt(i + 1);
                     attachedWindows.RemoveAt(i);
@@ -461,31 +461,37 @@ namespace NodeEditor
             // For each window, draw window.
             for (int i = 0; i < windows.Count; i++)
             {
-                if (windows[i].rectangle.Contains(mousePos))
-                {
-                    windows[i].rectangle = HorizResizer(windows[i].rectangle); //right
-                    windows[i].rectangle = HorizResizer(windows[i].rectangle, false); //left
-                    windows[i].rectangle = VertResizer(windows[i].rectangle); //Up
-                    windows[i].rectangle = VertResizer(windows[i].rectangle, false); //down
-                }
+                // For resizing
 
+                //if (windows[i].rectangle.Contains(mousePos))
+                //{
+                //    windows[i].rectangle = HorizResizer(windows[i].rectangle); //right
+                //    windows[i].rectangle = HorizResizer(windows[i].rectangle, false); //left
+                //    windows[i].rectangle = VertResizer(windows[i].rectangle); //Up
+                //    windows[i].rectangle = VertResizer(windows[i].rectangle, false); //down
+                //}
+
+                // Create audio node
                 if (windows[i] is AudioNode)
                 {
                     string displayName = windows[i].nodeName + " (Audio)";
                     windows[i].rectangle = GUI.Window(i, windows[i].rectangle, DrawNodeWindow, displayName);
 
                 }
+                
                 else if (windows[i] is MaxNode)
                 {
                     windows[i].rectangle = GUI.Window(i, windows[i].rectangle, DrawMaxNodeWindow, windows[i].nodeName);
 
                 }
+                // Create visual node
                 else if (windows[i] is VisualNode)
                 {
                     VisualNode visualNode = (VisualNode)windows[i];
                     string displayName = windows[i].nodeName + "(" + visualNode.parent + ")";
                     windows[i].rectangle = GUI.Window(i, windows[i].rectangle, DrawNodeWindow, displayName);
                 }
+                // All rest of the nodes
                 else
                     windows[i].rectangle = GUI.Window(i, windows[i].rectangle, DrawNodeWindow, windows[i].nodeName);
             }
@@ -918,14 +924,21 @@ namespace NodeEditor
             // Where do send it too.
             string[] incAddress = oscMessage.Address.Split('/');
             // Value it contains.
-            float incValue = (float)oscMessage.Values[0];
+            object incValue = oscMessage.Values[0];
             // Search each audio node to find where to send it.
             for (int i = 0; i < windows.Count; i++)
                 // First check if correct class type.
                 if (windows[i] is AudioNode)
                     // If windows contains name to this address. - Make it more accurate.
                     if (incAddress[1].ToLower().Equals(windows[i].nodeName.ToLower()))
-                        windows[i].value = (float)incValue;
+                    {
+                        // Cast to appropriate type
+                        if (incValue is float)
+                            windows[i].value = (float)incValue;
+                        else if (incValue is int)
+                            windows[i].value = (int)incValue;
+                    }
+                        
         }
 
 
