@@ -57,24 +57,28 @@ namespace NodeEditor
                         {
                             // If true, overwrite current value with the incoming value
                             if (Vectors[j])
-                                vector3Value[j] = (float)this.value;
+                                vector3Value[j] = Mathf.Lerp(vector3Value[j], this.value, Time.deltaTime);
 
                         }
+
                         // Set the value
                         propertyInfo[i].propertyInfo.SetValue(compObj, vector3Value, null);
                     }
                     // Update as int
                     else if (propertyInfo[i].propertyInfo.PropertyType == typeof(int))
                     {
+                        // Ints will not linearly interpolate
                         // Cast
-                        int intValue = (int)this.value;
+                        int intValue = System.Convert.ToInt32(this.value);
                         // Set the value
                         propertyInfo[i].propertyInfo.SetValue(compObj, intValue, null);
                     }
                     // Default
                     else
                     {
-                        propertyInfo[i].propertyInfo.SetValue(compObj, this.value, null);
+                        float previousValue = (float)propertyInfo[i].propertyInfo.GetValue(compObj, null);
+                        float theValue = Mathf.Lerp(previousValue, this.value, Time.deltaTime);
+                        propertyInfo[i].propertyInfo.SetValue(compObj, theValue, null);
                     }
                 }
             }
@@ -109,7 +113,7 @@ namespace NodeEditor
                         {
                             // If true, overwrite current value with the incoming value
                             if (Vectors[i])
-                                vector3Value[i] = (float)this.value;
+                                vector3Value[j] = Mathf.Lerp(vector3Value[j], this.value, Time.deltaTime);
 
                         }
 
@@ -119,15 +123,16 @@ namespace NodeEditor
                     // Update as int
                     else if (fieldInfo[i].FieldType == typeof(int))
                     {
-                        // Cast
+                        // Ints will not linearly interpolate
                         int intValue = System.Convert.ToInt32(this.value);
-                        // Set the value
                         fieldInfo[i].SetValue(compObj, intValue);
                     }
                     // Default
                     else
                     {
-                        fieldInfo[i].SetValue(compObj, this.value);
+                        float previousValue = (float)fieldInfo[i].GetValue(compObj);
+                        float theValue = Mathf.Lerp(previousValue, this.value, Time.deltaTime);
+                        fieldInfo[i].SetValue(compObj, theValue);
                     }
                 }
             }

@@ -36,6 +36,9 @@ public class MetaballController : MonoBehaviour {
 	// Update is called once per frame
 	void Update ()
     {
+        // Between 1 and 100 metaballs
+        metaballInstances = Mathf.Clamp(metaballInstances, 1, 100);
+        metaballSpeed = Mathf.Clamp(metaballSpeed, -1f, 1f);
         // Add missing metaballs
         if (transform.childCount < metaballInstances)
         {
