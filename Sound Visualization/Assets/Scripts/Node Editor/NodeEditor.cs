@@ -31,6 +31,11 @@ namespace NodeEditor
         public List<int> windowsToAttach = new List<int>();
         // IDS of connected nodes.
         public List<int> attachedWindows = new List<int>();
+
+        // Handles material colours.
+        MatUtil matCols = new MatUtil();
+
+        // Handles Node resizing - CURRENTLY DISABLED.
         bool draggingLeft = false;
         bool draggingRight = false;
         bool draggingUp = false;
@@ -104,7 +109,7 @@ namespace NodeEditor
                     uniqueNodeId++;
                     break;
                 case "Material":
-                    windows.Add(new MaterialNode(new Rect(mousePos.x, mousePos.y, 100, 150), "Material", uniqueNodeId));
+                    windows.Add(new MaterialNode(new Rect(mousePos.x, mousePos.y, 150, 150), "Material", uniqueNodeId));
                     uniqueNodeId++;
                     break;
                 default:
@@ -159,7 +164,7 @@ namespace NodeEditor
             }
         }
 
-        // Handles any callback deletions.
+        // Handles connection deletion.
         void DeleteConnection(object obj)
         {
             DeleteConnection temp = (DeleteConnection)obj;
@@ -538,7 +543,7 @@ namespace NodeEditor
             GUI.DragWindow(new Rect(0, 0, windows[id].rectangle.width, 20));
         }
 
-        // Draws the node window.
+        // Draws the node window. - Split each node into seperate method!
         void DrawNodeWindow(int id)
         {
             // Controller node cannot attach to anything
@@ -695,7 +700,6 @@ namespace NodeEditor
                 //float.TryParse(GUILayout.TextField(temp.modifier.ToString()), out temp.modifier);
                 //temp.modifier = EditorGUI.FloatField(new Rect(windows[id].rectangle.width - 60, windows[id].rectangle.height - 25, 50, 20), temp.modifier);
                 temp.modifier = EditorGUILayout.FloatField("Modifier:", temp.modifier);
-
                 //Transform selectedObj = Selection.activeTransform;
 
                 temp.currentOperator = (Operators)EditorGUILayout.EnumPopup(
@@ -708,11 +712,42 @@ namespace NodeEditor
                 EditorGUILayout.FloatField("Output:", temp.output);
 
             }
+
+            // Material node.
             else if (windows[id] is MaterialNode)
             {
+                // Cast node to material.
                 MaterialNode temp = (MaterialNode)windows[id];
 
+                // Update methodToSearch.
                 temp.methodToSearch = EditorGUILayout.TextField(temp.methodToSearch);
+
+                // If it can be used.
+                if (temp.methodToSearch != null && temp.material != null)
+                {
+                    // Temporary solution. - if trying to modify the colour.
+                    if (temp.methodToSearch.ToLower() == "color")
+                    {
+                        
+                        // Display Color
+                        if(temp.methodToSearch.ToLower() == "emissioncolor")
+                            EditorGUILayout.Vector4Field("", MaterialNode.emissionCol);
+                        else 
+                            EditorGUILayout.Vector4Field("", MaterialNode.col);
+
+                        // Toggle boxes
+                        EditorGUILayout.BeginHorizontal();
+                        temp.Vectors[0] = EditorGUILayout.Toggle(temp.Vectors[0]);
+                        temp.Vectors[1] = EditorGUILayout.Toggle(temp.Vectors[1]);
+                        temp.Vectors[2] = EditorGUILayout.Toggle(temp.Vectors[2]);
+                        temp.Vectors[3] = EditorGUILayout.Toggle(temp.Vectors[3]);
+                        EditorGUILayout.EndHorizontal();
+                    }
+                }
+                else
+                {
+                    EditorGUILayout.FloatField(temp.value);
+                }
             }
             // Area of rect to drag (initial, inital, width,height);
             GUI.DragWindow(new Rect(0, 0, windows[id].rectangle.width, 20));
