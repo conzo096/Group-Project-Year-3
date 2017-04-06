@@ -664,7 +664,7 @@ namespace NodeEditor
                     }
                     else
                     {
-                        EditorGUILayout.FloatField((float)temp.value);
+                        EditorGUILayout.FloatField(temp.value);
                     }
                 }
                 if (temp.fieldInfo != null)
@@ -686,7 +686,7 @@ namespace NodeEditor
                     }
                     else
                     {
-                        EditorGUILayout.FloatField((float)temp.value);
+                        temp.value = EditorGUILayout.FloatField(temp.value);
                     }
                 }
             }
@@ -722,28 +722,7 @@ namespace NodeEditor
                 // If it can be used.
                 if (temp.methodToSearch != null && temp.material != null)
                 {
-                    // Temporary solution. - if trying to modify the colour.
-                    if (temp.methodToSearch.ToLower().Contains("color"))
-                    {
-                        
-                        // Display Color
-                        if(temp.methodToSearch.ToLower() == "emissioncolor")
-                            EditorGUILayout.Vector4Field("", MaterialNode.emissionCol);
-                        else 
-                            EditorGUILayout.Vector4Field("", MaterialNode.col);
-
-                        // Toggle boxes
-                        EditorGUILayout.BeginHorizontal();
-                        temp.Vectors[0] = EditorGUILayout.Toggle(temp.Vectors[0]);
-                        temp.Vectors[1] = EditorGUILayout.Toggle(temp.Vectors[1]);
-                        temp.Vectors[2] = EditorGUILayout.Toggle(temp.Vectors[2]);
-                        temp.Vectors[3] = EditorGUILayout.Toggle(temp.Vectors[3]);
-                        EditorGUILayout.EndHorizontal();
-                    }
-                }
-                else
-                {
-                    EditorGUILayout.FloatField(temp.value);
+                    temp.value = EditorGUILayout.FloatField(temp.value);
                 }
             }
             // Area of rect to drag (initial, inital, width,height);
@@ -848,6 +827,8 @@ namespace NodeEditor
             return false;
         }
 
+
+        // Used to resize nodes, currently bugged.
         private Rect HorizResizer(Rect window, bool right = true, float detectionRange = 8f)
         {
             detectionRange *= 0.5f;
