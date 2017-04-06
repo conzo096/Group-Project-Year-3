@@ -127,10 +127,11 @@ namespace NodeEditor
                         int intValue = System.Convert.ToInt32(this.value);
                         fieldInfo[i].SetValue(compObj, intValue);
                     }
-                    // Default
+                    // Default - float
                     else
                     {
                         float previousValue = (float)fieldInfo[i].GetValue(compObj);
+                        //float theValue = value;
                         float theValue = Mathf.Lerp(previousValue, this.value, Time.deltaTime);
                         fieldInfo[i].SetValue(compObj, theValue);
                     }
