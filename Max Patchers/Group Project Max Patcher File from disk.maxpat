@@ -38,6 +38,19 @@
 		"subpatcher_template" : "",
 		"boxes" : [ 			{
 				"box" : 				{
+					"id" : "obj-31",
+					"maxclass" : "newobj",
+					"numinlets" : 6,
+					"numoutlets" : 1,
+					"outlettype" : [ "" ],
+					"patching_rect" : [ 159.0, 362.5, 110.0, 22.0 ],
+					"style" : "",
+					"text" : "scale -35. -5. 0. 20"
+				}
+
+			}
+, 			{
+				"box" : 				{
 					"id" : "obj-12",
 					"maxclass" : "newobj",
 					"numinlets" : 0,
@@ -260,7 +273,7 @@
 					"maxclass" : "comment",
 					"numinlets" : 1,
 					"numoutlets" : 0,
-					"patching_rect" : [ 175.5, 326.0, 68.0, 33.0 ],
+					"patching_rect" : [ 184.0, 234.0, 68.0, 33.0 ],
 					"style" : "",
 					"text" : "Amplitude values."
 				}
@@ -565,7 +578,7 @@
 					"numoutlets" : 2,
 					"outlettype" : [ "", "bang" ],
 					"parameter_enable" : 0,
-					"patching_rect" : [ 159.0, 364.5, 50.0, 22.0 ],
+					"patching_rect" : [ 159.0, 337.0, 50.0, 22.0 ],
 					"style" : ""
 				}
 
@@ -980,10 +993,9 @@
 			}
 , 			{
 				"patchline" : 				{
-					"destination" : [ "obj-53", 0 ],
+					"destination" : [ "obj-31", 0 ],
 					"disabled" : 0,
 					"hidden" : 0,
-					"midpoints" : [ 168.5, 410.0, 193.5, 410.0 ],
 					"source" : [ "obj-26", 0 ]
 				}
 
@@ -1023,6 +1035,16 @@
 					"hidden" : 0,
 					"midpoints" : [ 331.25, 459.0, 331.25, 459.0 ],
 					"source" : [ "obj-30", 0 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
+					"destination" : [ "obj-53", 0 ],
+					"disabled" : 0,
+					"hidden" : 0,
+					"midpoints" : [ 168.5, 428.0, 193.5, 428.0 ],
+					"source" : [ "obj-31", 0 ]
 				}
 
 			}
@@ -1273,6 +1295,26 @@
 				"name" : "noisiness~.mxo",
 				"type" : "iLaX"
 			}
+, 			{
+				"name" : "zsa.freqpeak~.mxo",
+				"type" : "iLaX"
+			}
+, 			{
+				"name" : "zsa.fund.mxo",
+				"type" : "iLaX"
+			}
+, 			{
+				"name" : "zsa.spread~.mxo",
+				"type" : "iLaX"
+			}
+, 			{
+				"name" : "zsa.flux~.mxo",
+				"type" : "iLaX"
+			}
+, 			{
+				"name" : "zsa.skewness~.mxo",
+				"type" : "iLaX"
+			}
  ],
 		"autosave" : 0,
 		"styles" : [ 			{
@@ -1332,8 +1374,8 @@
 , 			{
 				"name" : "newobjYellow-1",
 				"default" : 				{
-					"accentcolor" : [ 0.82517, 0.78181, 0.059545, 1.0 ],
-					"fontsize" : [ 12.059008 ]
+					"fontsize" : [ 12.059008 ],
+					"accentcolor" : [ 0.82517, 0.78181, 0.059545, 1.0 ]
 				}
 ,
 				"parentstyle" : "",
