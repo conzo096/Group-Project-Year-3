@@ -15,6 +15,12 @@ namespace NodeEditor
         public FieldInfo fieldInfo;
         public object compObj;
         public string parent;
+        // Should lerp?
+        public bool lerp;
+        // Modifies the lerp
+        public float lerpMod;
+        // t value of lerp function
+        private float t = 0f;
         // Tracks which properties of a Vector3 to change
         public bool[] Vectors = new bool[3];
 
@@ -39,6 +45,9 @@ namespace NodeEditor
 
                 if (propertyInfo[i].propertyInfo.Name == this.nodeName && propertyInfo[i].parent == this.parent)
                 {
+                    // Update lerp value
+                    t = lerpMod * Time.deltaTime;
+
                     Component comp;
                     propertyInfoDictionary.TryGetValue(propertyInfo[i], out comp);
                     compObj = (System.Object)comp;
@@ -57,8 +66,13 @@ namespace NodeEditor
                         {
                             // If true, overwrite current value with the incoming value
                             if (Vectors[j])
-                                vector3Value[j] = Mathf.Lerp(vector3Value[j], this.value, Time.deltaTime);
-
+                            {
+                                // Linearly interpolate?
+                                if (lerp)
+                                    vector3Value[j] = Mathf.Lerp(vector3Value[j], value, t);
+                                else
+                                    vector3Value[j] = value;
+                            }
                         }
 
                         // Set the value
@@ -77,7 +91,14 @@ namespace NodeEditor
                     else
                     {
                         float previousValue = (float)propertyInfo[i].propertyInfo.GetValue(compObj, null);
-                        float theValue = Mathf.Lerp(previousValue, this.value, Time.deltaTime);
+                        float theValue;
+
+                        // Linearly interpolate?
+                        if (lerp)
+                            theValue = Mathf.Lerp(previousValue, value, t);
+                        else
+                            theValue = value;
+
                         propertyInfo[i].propertyInfo.SetValue(compObj, theValue, null);
                     }
                 }
@@ -95,6 +116,9 @@ namespace NodeEditor
                 // If the variable is related to this node
                 if (fieldInfo[i].Name == this.nodeName)
                 {
+                    // Update lerp value
+                    t = lerpMod * Time.deltaTime;
+
                     Component comp;
                     fieldInfoDictionary.TryGetValue(fieldInfo[i], out comp);
                     compObj = (System.Object)comp;
@@ -113,7 +137,13 @@ namespace NodeEditor
                         {
                             // If true, overwrite current value with the incoming value
                             if (Vectors[i])
-                                vector3Value[j] = Mathf.Lerp(vector3Value[j], this.value, Time.deltaTime);
+                            {
+                                // Linearly interpolate?
+                                if (lerp)
+                                    vector3Value[j] = Mathf.Lerp(vector3Value[j], value, t);
+                                else
+                                    vector3Value[j] = value;
+                            }
 
                         }
 
@@ -131,8 +161,14 @@ namespace NodeEditor
                     else
                     {
                         float previousValue = (float)fieldInfo[i].GetValue(compObj);
-                        //float theValue = value;
-                        float theValue = Mathf.Lerp(previousValue, this.value, Time.deltaTime);
+                        float theValue;
+
+                        // Linearly interpolate?
+                        if (lerp)
+                            theValue = Mathf.Lerp(previousValue, value, t);
+                        else
+                            theValue = value;
+
                         fieldInfo[i].SetValue(compObj, theValue);
                     }
                 }

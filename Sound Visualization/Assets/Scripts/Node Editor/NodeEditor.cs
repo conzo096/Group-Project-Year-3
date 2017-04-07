@@ -79,7 +79,6 @@ namespace NodeEditor
                 case "Random":
                     windows.Add(new RandomGeneratorNode(new Rect(mousePos.x, mousePos.y, 100, 100), "Random", uniqueNodeId));
                     uniqueNodeId++;
-
                     break;
                 case "Amplitude":
                     windows.Add(new AudioNode(new Rect(mousePos.x, mousePos.y, 100, 100), "Amplitude", uniqueNodeId));
@@ -98,8 +97,24 @@ namespace NodeEditor
                     uniqueNodeId++;
                     break;
                 case "ControllerNode":
-                    windows.Add(new ControllerNode(new Rect(mousePos.x, mousePos.y, 200, 400), "ControllerNode", uniqueNodeId));
-                    uniqueNodeId++;
+                    // Assume controller does not exist
+                    bool exists = false;
+                    // Check for other controller
+                    for (int i = 0; i < windows.Count; i++)
+                    {
+                        if (windows[i] is ControllerNode)
+                        {
+                            // Controller exists
+                            exists = true;
+                            Debug.Log("A controller already exists.");
+                        }
+                    }
+                    // Only one controller may exist at a given time
+                    if (!exists)
+                    {
+                        windows.Add(new ControllerNode(new Rect(mousePos.x, mousePos.y, 200, 400), "ControllerNode", uniqueNodeId));
+                        uniqueNodeId++;
+                    }
                     break;
                 case "Operator":
                     windows.Add(new OperatorNode(new Rect(mousePos.x, mousePos.y, 200, 150), "Operator", uniqueNodeId));
@@ -119,7 +134,7 @@ namespace NodeEditor
                             Component comp;
                             propertyInfo.TryGetValue(currentPi, out comp);
                             System.Object compObj = (System.Object)comp;
-                            windows.Add(new VisualNode(new Rect(mousePos.x, mousePos.y, 200, 100), currentPi.propertyInfo.Name, currentPi.parent, currentPi.propertyInfo.GetValue(compObj, null), uniqueNodeId));
+                            windows.Add(new VisualNode(new Rect(mousePos.x, mousePos.y, 200, 120), currentPi.propertyInfo.Name, currentPi.parent, currentPi.propertyInfo.GetValue(compObj, null), uniqueNodeId));
                             uniqueNodeId++;
                         }
                     }
@@ -132,7 +147,7 @@ namespace NodeEditor
                             Component comp;
                             fieldInfo.TryGetValue(currentFi, out comp);
                             System.Object compObj = (System.Object)comp;
-                            windows.Add(new VisualNode(new Rect(mousePos.x, mousePos.y, 200, 100), nodeRequested, "", currentFi.GetValue(compObj), uniqueNodeId));
+                            windows.Add(new VisualNode(new Rect(mousePos.x, mousePos.y, 200, 120), nodeRequested, "", currentFi.GetValue(compObj), uniqueNodeId));
                             uniqueNodeId++;
                         }
                     }
@@ -647,6 +662,10 @@ namespace NodeEditor
                 // Vectors are displayed differently from floats and ints
                 if (temp.propertyInfo != null)
                 {
+                    // Display lerp toggle option
+                    temp.lerp = EditorGUILayout.Toggle("Lerp", temp.lerp);
+                    // Display lerp modifier
+                    temp.lerpMod = EditorGUILayout.Slider("Lerp modifier", temp.lerpMod, 1f, 10f);
                     if (temp.propertyInfo.PropertyType == typeof(Vector3))
                     {
                         // Cast object to Vector3
@@ -669,6 +688,10 @@ namespace NodeEditor
                 }
                 if (temp.fieldInfo != null)
                 {
+                    // Display lerp toggle option
+                    temp.lerp = EditorGUILayout.Toggle("Lerp", temp.lerp);
+                    // Display lerp modifier
+                    temp.lerpMod = EditorGUILayout.Slider("Lerp modifier", temp.lerpMod, 1f, 10f);
                     if (temp.fieldInfo.FieldType == typeof(Vector3))
                     {
                         // Cast object to Vector3
