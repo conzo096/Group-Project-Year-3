@@ -11,7 +11,7 @@ namespace NodeEditor
     public class NodeEditor : EditorWindow
     {
         private Osc handler; // Handles listening to max messages.
-        public static UDPPacketIO udp;
+        public UDPPacketIO udp;
         // Object field for controller node
         UnityEngine.Object fromObjectField = new UnityEngine.Object();
         //Operators display = Operators.Multiply;
@@ -38,19 +38,27 @@ namespace NodeEditor
         bool draggingUp = false;
         bool draggingDown = false;
 
+        void initUDP()
+        {
+            // Init once
+            if (udp == null)
+            {
+                // Get reference to window
+                NodeEditor window = (NodeEditor)GetWindow(typeof(NodeEditor));
+                udp = new UDPPacketIO();
+                // Init the user datagram protocal.
+                // Can change the listen port for each different input?
+                udp.init(window.RemoteIP, window.SendToPort, window.ListenerPort);
+                window.handler = new Osc();
+                window.handler.init(udp);
+                window.handler.SetAllMessageHandler(window.AllMessageHandler);
+            }
+        }
 
         [MenuItem("Window/Node Editor")]
         static void Init()
         {
             NodeEditor window = (NodeEditor)GetWindow(typeof(NodeEditor));
-            udp = new UDPPacketIO();
-            // Init the user datagram protocal.
-            // Can change the listen port for each different input?
-            udp.init(window.RemoteIP, window.SendToPort, window.ListenerPort);
-            window.handler = new Osc();
-            window.handler.init(udp);
-            window.handler.SetAllMessageHandler(window.AllMessageHandler);
-
             window.Show();
 
         }
@@ -251,12 +259,20 @@ namespace NodeEditor
         // Updates each frame.
         void Update()
         {
+            // Always make sure the UDP connection closes when re-compiling
+            if (EditorApplication.isCompiling && udp != null)
+                udp.Close();
+            // something
             // For each window
             for (int i = 0; i < windows.Count; i++)
             {
                 // Update audio nodes
                 if (windows[i] is AudioNode)
                 {
+                    // The udp connection will be set only if audio nodes are created
+                    initUDP();
+
+                    // Update audio nodes
                     AudioNode temp = (AudioNode)windows[i];
                     temp.UpdateValues();
 
@@ -317,7 +333,6 @@ namespace NodeEditor
 
         void OnGUI()
         {
-
             // Draw right click menu and populate list. Also check for right click event.
             Event currentEvent = Event.current;
             // Create generic menu.
